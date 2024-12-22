@@ -24,7 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from typing import List
+from typing import List, Callable
 
 import time
 import random
@@ -59,134 +59,30 @@ def generate_unicode_string() -> str:
     return ''.join(random.choice(UNICODE_CHARS) for _ in range(LENGTH_TO_TEST))
 
 
-def measure_performance_ascii(encoded: bytes):
+def measure_performance(rust_method: Callable, python_native_method: Callable, result: List[float], encoding: str, encoded: bytes, **kwargs):
     start_time: float = time.time()
 
-    COXave.ASCII.is_ascii(encoded)
+    if kwargs:
+        rust_method(encoded, **kwargs)
+    else:
+        rust_method(encoded)
 
-    RESULTS_ASCII[0] += time.time() - start_time
-
-    start_time = time.time()
-
-    is_ascii.ASCII.is_ascii(encoded)
-
-    RESULTS_ASCII[1] += time.time() - start_time
+    result[0] += time.time() - start_time
 
     start_time = time.time()
 
-    encoded.decode('ascii')
+    if kwargs:
+        python_native_method(encoded, endian=kwargs["endian"])
+    else:
+        python_native_method(encoded)
 
-    RESULTS_ASCII[2] += time.time() - start_time
-
-    del encoded
-
-
-def measure_performance_utf8(encoded: bytes):
-    start_time: float = time.time()
-
-    COXave.UTF8.is_utf8(encoded)
-
-    RESULTS_UTF8[0] += time.time() - start_time
+    result[1] += time.time() - start_time
 
     start_time = time.time()
 
-    is_utf8.UTF8.is_utf8(encoded)
+    encoded.decode(encoding)
 
-    RESULTS_UTF8[1] += time.time() - start_time
-
-    start_time = time.time()
-
-    encoded.decode('utf-8')
-
-    RESULTS_UTF8[2] += time.time() - start_time
-
-    del encoded
-
-
-def measure_performance_utf16_be(encoded: bytes):
-    start_time: float = time.time()
-
-    COXave.UTF16.is_utf16(encoded, endian=False, omp=True, only=False)
-
-    RESULTS_UTF16_BE[0] += time.time() - start_time
-
-    start_time = time.time()
-
-    is_utf16.UTF16.is_utf16(encoded, endian=False)
-
-    RESULTS_UTF16_BE[1] += time.time() - start_time
-
-    start_time = time.time()
-
-    encoded.decode('utf-16-be')
-
-    RESULTS_UTF16_BE[2] += time.time() - start_time
-
-    del encoded
-
-
-def measure_performance_utf16_le(encoded: bytes):
-    start_time: float = time.time()
-
-    COXave.UTF16.is_utf16(encoded, endian=True, omp=True, only=False)
-
-    RESULTS_UTF16_LE[0] += time.time() - start_time
-
-    start_time = time.time()
-
-    is_utf16.UTF16.is_utf16(encoded, endian=True)
-
-    RESULTS_UTF16_LE[1] += time.time() - start_time
-
-    start_time = time.time()
-
-    encoded.decode('utf-16-le')
-
-    RESULTS_UTF16_LE[2] += time.time() - start_time
-
-    del encoded
-
-
-def measure_performance_utf32_be(encoded: bytes):
-    start_time: float = time.time()
-
-    COXave.UTF32.is_utf32(encoded, endian=False)
-
-    RESULTS_UTF32_BE[0] += time.time() - start_time
-
-    start_time = time.time()
-
-    is_utf32.UTF32.is_utf32(encoded, endian=False)
-
-    RESULTS_UTF32_BE[1] += time.time() - start_time
-
-    start_time = time.time()
-
-    encoded.decode('utf-32-be')
-
-    RESULTS_UTF32_BE[2] += time.time() - start_time
-
-    del encoded
-
-
-def measure_performance_utf32_le(encoded: bytes):
-    start_time: float = time.time()
-
-    COXave.UTF32.is_utf32(encoded, endian=True)
-
-    RESULTS_UTF32_LE[0] += time.time() - start_time
-
-    start_time = time.time()
-
-    is_utf32.UTF32.is_utf32(encoded, endian=True)
-
-    RESULTS_UTF32_LE[1] += time.time() - start_time
-
-    start_time = time.time()
-
-    encoded.decode('utf-32-le')
-
-    RESULTS_UTF32_LE[2] += time.time() - start_time
+    result[2] += time.time() - start_time
 
     del encoded
 
@@ -196,12 +92,12 @@ if __name__ == "__main__":
     random_ascii_string: str = generate_ascii_string()
     random_unicode_string: str = generate_unicode_string()
 
-    measure_performance_ascii(random_ascii_string.encode("ascii"))
-    measure_performance_utf8(random_unicode_string.encode("utf-8"))
-    measure_performance_utf16_be(random_unicode_string.encode("utf-16-be"))
-    measure_performance_utf16_le(random_unicode_string.encode("utf-16-le"))
-    measure_performance_utf32_be(random_unicode_string.encode("utf-32-be"))
-    measure_performance_utf32_le(random_unicode_string.encode("utf-32-le"))
+    measure_performance(COXave.ASCII.is_ascii, is_ascii.ASCII.is_ascii, RESULTS_ASCII, "ascii", random_ascii_string.encode("ascii"))
+    measure_performance(COXave.UTF8.is_utf8, is_utf8.UTF8.is_utf8, RESULTS_UTF8, "utf-8", random_unicode_string.encode("utf-8"))
+    measure_performance(COXave.UTF16.is_utf16, is_utf16.UTF16.is_utf16, RESULTS_UTF16_BE, "utf-16-be", random_unicode_string.encode("utf-16-be"), endian=False, omp=True, only=False)
+    measure_performance(COXave.UTF16.is_utf16, is_utf16.UTF16.is_utf16, RESULTS_UTF16_LE, "utf-16-le", random_unicode_string.encode("utf-16-le"), endian=True, omp=True, only=False)
+    measure_performance(COXave.UTF32.is_utf32, is_utf32.UTF32.is_utf32, RESULTS_UTF32_BE, "utf-32-be", random_unicode_string.encode("utf-32-be"), endian=False)
+    measure_performance(COXave.UTF32.is_utf32, is_utf32.UTF32.is_utf32, RESULTS_UTF32_LE, "utf-32-le", random_unicode_string.encode("utf-32-le"), endian=True)
 
     print(
         f"[ASCII] Time: Rust (is_ascii)    = {RESULTS_ASCII[0]:.10f}s, Python Native (is_ascii) = {RESULTS_ASCII[1]:.10f}s, Python (decode) = {RESULTS_ASCII[2]:.10f}s\n"
