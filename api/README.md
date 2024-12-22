@@ -32,7 +32,66 @@ Cargo.toml:
 COXave = { version = "*" }
 ```
 
-## Usage with Python
+## Features
+
+Add feature to Cargo.toml to use universal functors (without SIMD-accelerated):
+
+```toml
+[dependencies]
+COXave = { version = "*", features = ["universal"] }
+```
+
+## Build
+
+### Specify target instruction set
+
+#### ARM/AARCH64
+
+##### V7/NEON
+
+```shell
+export RUSTFLAGS="-C target-feature=+neon,+v7"
+```
+
+##### V8/NEON
+
+```shell
+export RUSTFLAGS="-C target-feature=+neon"
+```
+
+#### x86/x86_64
+
+##### SSE/SSE2
+
+```shell
+export RUSTFLAGS="-C target-feature=+sse,+sse2"
+```
+
+##### SSE/SSE2 (+SSSE3)
+
+```shell
+export RUSTFLAGS="-C target-feature=+sse,+sse2,+ssse3"
+```
+
+##### AVX/AVX2
+
+```shell
+export RUSTFLAGS="-C target-feature=+avx,+avx2"
+```
+
+##### AVX-512F/AVX-512BW
+
+```shell
+export RUSTFLAGS="-C target-feature=+avx512f,+avx512bw"
+```
+
+Before using unstable features you need to run this:
+
+```shell
+rustup default nightly || rustup toolchain install nightly
+```
+
+### Usage with Python
 
 ```shell
 maturin build -m api/Cargo.toml --release --features python && pip install --force-reinstall target/wheels/COXave-*.whl

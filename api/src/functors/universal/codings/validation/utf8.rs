@@ -26,7 +26,11 @@
  * THE SOFTWARE.
  */
 
-pub struct UTF8;
+pub use crate::{
+    essence::{
+        UTF8
+    }
+};
 
 impl UTF8 {
 
@@ -50,7 +54,7 @@ impl UTF8 {
         let (mut second_index, mut third_index, mut four_index): (usize, usize, usize);
 
         while index < length {
-            (second_index, third_index, four_index) = (index + 1, index + 2, index + 3);
+            (second_index, third_index, four_index) = (index + 1_usize, index + 2_usize, index + 3_usize);
 
             if (array[index] & 0x80) == 0x00 {
                 index += 1

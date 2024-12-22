@@ -26,53 +26,33 @@
  * THE SOFTWARE.
  */
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(unused_imports)]
-#![allow(non_camel_case_types)]
+mod universal;
 
-#![deny(arithmetic_overflow)]
-#![deny(overflowing_literals)]
-
-#![cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), feature(stdarch_x86_avx512))]
-
-mod essence;
-mod functors;
-
-#[cfg(all(feature = "universal", not(any(feature = "python"))))]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF8, UTF16, UTF32
-    },
-    search::{
-        ByteSearch
-    }
+#[cfg(feature = "universal")]
+pub use universal::{
+    codings,
+    search
 };
 
 #[cfg(all(
-    any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86_64",
-        target_arch = "x86"
-    ),
-    not(feature = "universal"), not(feature = "python"))
-)]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF16, UTF32
-    },
-    non_simd_codings::{
-        *
-    },
-    search::{
-        ByteSearch
-    }
+    any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86", target_arch = "x86_64"),
+    not(feature = "universal")
+))]
+mod platform;
+
+#[cfg(all(
+    any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86", target_arch = "x86_64"),
+    not(feature = "universal")
+))]
+pub use platform::{
+    codings
 };
 
-#[cfg(any(
-    feature = "python",
+#[cfg(all(
+    any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86", target_arch = "x86_64"),
+    not(feature = "universal")
 ))]
-mod bindings;
+pub use universal::{
+    codings as non_simd_codings,
+    search
+};

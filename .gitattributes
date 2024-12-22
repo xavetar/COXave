@@ -1,1 +1,4 @@
-* linguist-language=Rust
+compact/* linguist-vendored
+examples/* linguist-vendored
+*.py linguist-language=Python
+*.rs linguist-language=Rust

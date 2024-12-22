@@ -11,7 +11,7 @@ documentation = "https://docs.rs/crate/COXave/latest"
 readme = "README.md"
 repository.workspace = true
 keywords = ["encoding", "ascii", "utf-8", "utf-16", "utf-32"]
-categories = ["encoding"]
+categories = ["text-processing", "encoding", "internationalization"]
 include = ["res/", "src/", "Cargo.toml", "config.toml", "COXave.pyi", "pyproject.toml", "COXave.pyi", "REDAME.md", "Cross.toml",  "LICENSE"]
 
 [lib]
@@ -20,8 +20,8 @@ crate-type = ["lib", "cdylib"]
 
 [features]
 default = []
+universal = []
 python = ["dep:pyo3"]
 
 [dependencies]
-pyo3 = { version = "0.23.3", optional = true, default-features = false, features = ["macros", "extension-module"] }
-
+pyo3 = { version = "0.23.4", optional = true, default-features = false, features = ["macros", "extension-module"] }

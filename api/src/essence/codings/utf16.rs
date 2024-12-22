@@ -26,20 +26,4 @@
  * THE SOFTWARE.
  */
 
-pub struct ASCII;
-
-impl ASCII {
-    const fn is_not_ascii(code: u8) -> bool {
-        return if code > 0x7F { true } else { false };
-    }
-
-    pub const fn is_ascii(array: &[u8]) -> bool {
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
-
-        if length == 0_usize { return false; }
-
-        while index < length { if ASCII::is_not_ascii(array[index]) { return false; } else { index += 1_usize; } }
-
-        return true;
-    }
-}
+pub struct UTF16;

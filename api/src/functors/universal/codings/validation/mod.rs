@@ -26,53 +26,24 @@
  * THE SOFTWARE.
  */
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(unused_imports)]
-#![allow(non_camel_case_types)]
+#[cfg(feature = "universal")]
+mod ascii;
 
-#![deny(arithmetic_overflow)]
-#![deny(overflowing_literals)]
+mod utf8;
 
-#![cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), feature(stdarch_x86_avx512))]
+#[cfg(feature = "universal")]
+mod utf16;
 
-mod essence;
-mod functors;
+#[cfg(feature = "universal")]
+mod utf32;
 
-#[cfg(all(feature = "universal", not(any(feature = "python"))))]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF8, UTF16, UTF32
-    },
-    search::{
-        ByteSearch
-    }
-};
+#[cfg(feature = "universal")]
+pub use ascii::{ASCII};
 
-#[cfg(all(
-    any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86_64",
-        target_arch = "x86"
-    ),
-    not(feature = "universal"), not(feature = "python"))
-)]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF16, UTF32
-    },
-    non_simd_codings::{
-        *
-    },
-    search::{
-        ByteSearch
-    }
-};
+pub use utf8::{UTF8};
 
-#[cfg(any(
-    feature = "python",
-))]
-mod bindings;
+#[cfg(feature = "universal")]
+pub use utf16::{UTF16};
+
+#[cfg(feature = "universal")]
+pub use utf32::{UTF32};

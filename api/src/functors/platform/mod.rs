@@ -26,53 +26,38 @@
  * THE SOFTWARE.
  */
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(unused_imports)]
-#![allow(non_camel_case_types)]
+#[cfg(target_arch = "aarch64")]
+mod aarch64;
 
-#![deny(arithmetic_overflow)]
-#![deny(overflowing_literals)]
+#[cfg(target_arch = "arm")]
+mod arm;
 
-#![cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), feature(stdarch_x86_avx512))]
+#[cfg(target_arch = "x86_64")]
+mod x86_64;
 
-mod essence;
-mod functors;
-
-#[cfg(all(feature = "universal", not(any(feature = "python"))))]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF8, UTF16, UTF32
-    },
-    search::{
-        ByteSearch
-    }
-};
-
-#[cfg(all(
-    any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86_64",
-        target_arch = "x86"
-    ),
-    not(feature = "universal"), not(feature = "python"))
-)]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF16, UTF32
-    },
-    non_simd_codings::{
-        *
-    },
-    search::{
-        ByteSearch
-    }
-};
+#[cfg(target_arch = "x86")]
+mod x86;
 
 #[cfg(any(
-    feature = "python",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86_64",
+    target_arch = "x86"
 ))]
-mod bindings;
+macro_rules! import_functions {
+    ($platform:ident) => {
+        pub use self::$platform::{codings};
+    };
+}
+
+#[cfg(target_arch = "aarch64")]
+import_functions!(aarch64);
+
+#[cfg(target_arch = "arm")]
+import_functions!(arm);
+
+#[cfg(target_arch = "x86_64")]
+import_functions!(x86_64);
+
+#[cfg(target_arch = "x86")]
+import_functions!(x86);

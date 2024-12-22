@@ -15,7 +15,7 @@ resolver="2"
 [workspace.package]
 authors = ["Stanislav Mikhailov <xavetar@proton.me>"]
 edition = "2021"
-version = "1.0.1"
+version = "1.0.7"
 rust-version = "1.67.0"
 license-file = "LICENSE"
 repository = "https://github.com/xavetar/COXave"
@@ -23,7 +23,7 @@ description = "Instruments for codings"
 
 # Dependencies
 [workspace.dependencies]
-COXave = { version = "=1.0.1", path = "api", default-features = false }
+COXave = { version = "=1.0.7", path = "api", default-features = false }
 
 # Profiles
 [profile.dev]

@@ -26,53 +26,35 @@
  * THE SOFTWARE.
  */
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(unused_imports)]
-#![allow(non_camel_case_types)]
+mod validation;
+mod search;
 
-#![deny(arithmetic_overflow)]
-#![deny(overflowing_literals)]
+#[cfg(feature = "universal")]
+mod unite {
+    use super::validation;
+    use super::search;
 
-#![cfg_attr(any(target_arch = "x86", target_arch = "x86_64"), feature(stdarch_x86_avx512))]
+    pub use validation::{*};
+    pub use search::{*};
+}
 
-mod essence;
-mod functors;
-
-#[cfg(all(feature = "universal", not(any(feature = "python"))))]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF8, UTF16, UTF32
-    },
-    search::{
-        ByteSearch
-    }
+#[cfg(feature = "universal")]
+pub use unite::{
+    ASCII,
+    UTF8, UTF16, UTF32
 };
 
-#[cfg(all(
-    any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86_64",
-        target_arch = "x86"
-    ),
-    not(feature = "universal"), not(feature = "python"))
-)]
-pub use functors::{
-    codings::{
-        ASCII,
-        UTF16, UTF32
-    },
-    non_simd_codings::{
-        *
-    },
-    search::{
-        ByteSearch
-    }
-};
+#[cfg(not(feature = "universal"))]
+mod unite {
+    use super::validation;
+    use super::search;
 
-#[cfg(any(
-    feature = "python",
-))]
-mod bindings;
+    pub use validation::{UTF8};
+    pub use search::{*};
+}
+
+#[cfg(not(feature = "universal"))]
+pub use unite::{
+    ASCII,
+    UTF8, UTF16, UTF32
+};

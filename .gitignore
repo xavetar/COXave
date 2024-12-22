@@ -12,6 +12,7 @@ Cargo.lock
 
 # Python
 __pycache__
+*.pyc
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
