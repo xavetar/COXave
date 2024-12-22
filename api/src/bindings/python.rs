@@ -51,7 +51,7 @@ impl ASCIIWrapper {
     #[staticmethod]
     #[pyo3(name = "is_ascii")]
     pub fn is_ascii_ffi(bytes: &Bound<'_, PyBytes>) -> bool {
-        return ASCII::is_ascii(bytes.as_bytes());
+        return ASCII::is_ascii_from_byte_array(bytes.as_bytes());
     }
 }
 

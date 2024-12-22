@@ -29,11 +29,11 @@
 pub struct ASCII;
 
 impl ASCII {
-    const fn is_not_ascii(code: u8) -> bool {
-        return if code > 0x7F { true } else { false };
+    const fn is_not_ascii(code: u128) -> bool {
+        return if (code & 0x80808080808080808080808080808080) != 0 { true } else { false };
     }
 
-    pub const fn is_ascii(array: &[u8]) -> bool {
+    pub const fn is_ascii(array: &[u128]) -> bool {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         if length == 0_usize { return false; }
@@ -41,5 +41,31 @@ impl ASCII {
         while index < length { if ASCII::is_not_ascii(array[index]) { return false; } else { index += 1_usize; } }
 
         return true;
+    }
+
+    pub const fn is_ascii_from_byte_array(array: &[u8]) -> bool {
+        let length: usize = array.len();
+
+        let (mut index, mut indivisible_code_array): (usize, [u8; 16_usize]) = (0_usize, [0_u8; 16_usize]);
+
+        return if length == 0_usize { false }
+        else if length < 16_usize {
+            while index < length { indivisible_code_array[index] = array[index]; index += 1; }
+
+            if ASCII::is_not_ascii(u128::from_ne_bytes(indivisible_code_array)) { false } else { true }
+        } else {
+            let indivisible: usize = length % 16_usize;
+
+            if indivisible != 0 {
+                while index < indivisible { indivisible_code_array[index] = array[index]; index += 1; }
+
+                if ASCII::is_not_ascii(u128::from_ne_bytes(indivisible_code_array)) { false }
+                else {
+                    ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr().add(indivisible) as *const u128, length / 16_usize) })
+                }
+            } else {
+                ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr() as *const u128, length / 16_usize) })
+            }
+        }
     }
 }
