@@ -1,0 +1,36 @@
+[target]
+
+[x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
+
+[aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
+
+# Profiles
+[profile.dev]
+lto = "off"
+debug = true
+strip = false
+opt-level = 0
+panic = "abort"
+incremental = false
+codegen-units = 256
+overflow-checks = true
+debug-assertions = true
+
+[profile.release]
+lto = "fat"
+debug = false
+strip = true
+opt-level = 3
+panic = "abort"
+incremental = false
+codegen-units = 256
+overflow-checks = true
+debug-assertions = false

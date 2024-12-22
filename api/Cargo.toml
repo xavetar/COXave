@@ -1,0 +1,27 @@
+[package]
+name = "COXave"
+authors = ["Stanislav Mikhailov <xavetar@proton.me>"]
+publish = true
+version.workspace = true
+edition.workspace = true
+license-file = "LICENSE"
+rust-version.workspace = true
+description = "Instruments for codings"
+documentation = "https://docs.rs/crate/COXave/latest"
+readme = "README.md"
+repository.workspace = true
+keywords = ["encoding", "ascii", "utf-8", "utf-16", "utf-32"]
+categories = ["encoding"]
+include = ["res/", "src/", "Cargo.toml", "config.toml", "COXave.pyi", "pyproject.toml", "COXave.pyi", "REDAME.md", "Cross.toml",  "LICENSE"]
+
+[lib]
+name = "COXave"
+crate-type = ["lib", "cdylib"]
+
+[features]
+default = []
+python = ["dep:pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.23.3", optional = true, default-features = false, features = ["macros", "extension-module"] }
+

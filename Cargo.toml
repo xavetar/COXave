@@ -1,0 +1,49 @@
+# Workspace
+[workspace]
+
+members = [
+    "api"
+]
+
+default-members = [
+    "api"
+]
+
+resolver="2"
+
+# Package
+[workspace.package]
+authors = ["Stanislav Mikhailov <xavetar@proton.me>"]
+edition = "2021"
+version = "1.0.1"
+rust-version = "1.67.0"
+license-file = "LICENSE"
+repository = "https://github.com/xavetar/COXave"
+description = "Instruments for codings"
+
+# Dependencies
+[workspace.dependencies]
+COXave = { version = "=1.0.1", path = "api", default-features = false }
+
+# Profiles
+[profile.dev]
+lto = "off"
+debug = true
+strip = false
+opt-level = 0
+panic = "abort"
+incremental = false
+codegen-units = 256
+overflow-checks = true
+debug-assertions = true
+
+[profile.release]
+lto = "fat"
+strip = true
+debug = false
+opt-level = 3
+panic = "abort"
+incremental = false
+codegen-units = 256
+overflow-checks = true
+debug-assertions = false
