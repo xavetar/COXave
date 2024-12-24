@@ -31,18 +31,42 @@ pub struct UTF32;
 impl UTF32 {
     const __ENCODING_BYTES: usize = 4_usize;
 
-    const fn is_not_utf32(code: u32) -> bool {
-        return if (code & 0xFFFF0000) == 0x00000000 && (code & 0x0000F800) == 0x0000D800 { true }
-        else if (code & 0xFFFF0000) > 0x00100000 { true }
-        else { false };
+    const fn is_not_utf32(code: u128) -> bool {
+        return if (code & 0xFFFF0000FFFF0000FFFF0000FFFF0000) == 0x00000000000000000000000000000000  {
+
+            let mask_result: u128 = !(code ^ 0xFFFFD8FFFFFFD8FFFFFFD8FFFFFFD8FF) + 0x00000700000007000000070000000700;
+
+            if (((mask_result >> 8) & 0xFF) as u8 == 0xFF)
+            || (((mask_result >> 40) & 0xFF) as u8 == 0xFF)
+            || (((mask_result >> 72) & 0xFF) as u8 == 0xFF)
+            || (((mask_result >> 104) & 0xFF) as u8 == 0xFF) { true } else { false }
+        }
+        else {
+            if (((code >> 16) & 0xFFFF) as u16 > 0x0010)
+            || (((code >> 48) & 0xFFFF) as u16 > 0x0010)
+            || (((code >> 80) & 0xFFFF) as u16 > 0x0010)
+            || (((code >> 112) & 0xFFFF) as u16 > 0x0010) { true } else { false }
+        }
     }
 
-    pub const fn is_utf32(array: &[u32], endian: bool) -> bool {
-        const fn swap_endian(value: u32) -> u32 {
-            return ((value & 0xFF000000) >> 24)
-                 | ((value & 0x00FF0000) >> 8)
-                 | ((value & 0x0000FF00) << 8)
-                 | ((value & 0x000000FF) << 24);
+    pub const fn is_utf32(array: &[u128], endian: bool) -> bool {
+        const fn swap_endian(value: u128) -> u128 {
+            return ((value & 0xFF000000000000000000000000000000) >> 24)
+                 | ((value & 0x00FF0000000000000000000000000000) >> 8)
+                 | ((value & 0x0000FF00000000000000000000000000) << 8)
+                 | ((value & 0x000000FF000000000000000000000000) << 24)
+                 | ((value & 0x00000000FF0000000000000000000000) >> 24)
+                 | ((value & 0x0000000000FF00000000000000000000) >> 8)
+                 | ((value & 0x000000000000FF000000000000000000) << 8)
+                 | ((value & 0x00000000000000FF0000000000000000) << 24)
+                 | ((value & 0x0000000000000000FF00000000000000) >> 24)
+                 | ((value & 0x000000000000000000FF000000000000) >> 8)
+                 | ((value & 0x00000000000000000000FF0000000000) << 8)
+                 | ((value & 0x0000000000000000000000FF00000000) << 24)
+                 | ((value & 0x000000000000000000000000FF000000) >> 24)
+                 | ((value & 0x00000000000000000000000000FF0000) >> 8)
+                 | ((value & 0x0000000000000000000000000000FF00) << 8)
+                 | ((value & 0x000000000000000000000000000000FF) << 24);
         }
 
         let (mut index, length): (usize, usize) = (0_usize, array.len());
@@ -64,10 +88,25 @@ impl UTF32 {
         return true;
     }
 
-    pub const fn is_utf32_from_byte_array(bytes: &[u8], endian: bool) -> bool {
-        let length: usize = bytes.len();
+    pub fn is_utf32_from_byte_array(array: &[u8], endian: bool) -> bool {
+        let length: usize = array.len();
+
+        let (mut index, mut indivisible_code_array): (usize, [u8; 16_usize]) = (0_usize, [0_u8; 16_usize]);
 
         return if length == 0 || length % UTF32::__ENCODING_BYTES != 0_usize { false }
-        else { UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u32>(bytes.as_ptr() as *const u32, length / UTF32::__ENCODING_BYTES) }, endian) }
+        else if length < 16_usize {
+            while index < length { indivisible_code_array[index] = array[index]; index += 1; }
+
+            UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(indivisible_code_array.as_ptr() as *const u128, 1_usize) }, endian)
+        } else {
+            let indivisible: usize = length % 16_usize;
+
+            if indivisible != 0 {
+                while index < indivisible { indivisible_code_array[index] = array[index]; index += 1; }
+
+                if !UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(indivisible_code_array.as_ptr() as *const u128, 1_usize) }, endian) { false }
+                else { UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr().add(indivisible) as *const u128, (length - indivisible) / 16_usize) }, endian) }
+            } else { UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr() as *const u128, length / 16_usize) }, endian) }
+        }
     }
 }
