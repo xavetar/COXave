@@ -88,7 +88,7 @@ impl UTF32 {
         return true;
     }
 
-    pub fn is_utf32_from_byte_array(array: &[u8], endian: bool) -> bool {
+    pub const fn is_utf32_from_byte_array(array: &[u8], endian: bool) -> bool {
         let length: usize = array.len();
 
         let (mut index, mut indivisible_code_array): (usize, [u8; 16_usize]) = (0_usize, [0_u8; 16_usize]);
