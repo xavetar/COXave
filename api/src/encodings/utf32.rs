@@ -34,7 +34,7 @@ impl UTF32 {
     const fn is_not_utf32(code: u128) -> bool {
         return if (code & 0xFFFF0000FFFF0000FFFF0000FFFF0000) == 0x00000000000000000000000000000000  {
 
-            let mask_result: u128 = !(code ^ 0xFFFFD8FFFFFFD8FFFFFFD8FFFFFFD8FF) + 0x00000700000007000000070000000700;
+            let mask_result: u128 = !(code ^ 0xFFFFD8FFFFFFD8FFFFFFD8FFFFFFD8FF) | 0x00000700000007000000070000000700;
 
             if (((mask_result >> 8) & 0xFF) as u8 == 0xFF)
             || (((mask_result >> 40) & 0xFF) as u8 == 0xFF)
