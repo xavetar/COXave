@@ -60,12 +60,8 @@ impl ASCII {
                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1; }
 
                 if ASCII::is_not_ascii(u128::from_ne_bytes(indivisible_code_array)) { false }
-                else {
-                    ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr().add(indivisible) as *const u128, length / 16_usize) })
-                }
-            } else {
-                ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr() as *const u128, length / 16_usize) })
-            }
+                else { ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr().add(indivisible) as *const u128, (length - indivisible) / 16_usize) }) }
+            } else { ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(array.as_ptr() as *const u128, length / 16_usize) }) }
         }
     }
 }
