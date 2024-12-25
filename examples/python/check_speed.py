@@ -37,10 +37,10 @@ import COXave
 
 LENGTH_TO_TEST: int = 100_000_000
 
-ASCII_CHARS:   List[str] = [chr(i) for i in range(0, 0x80) if chr(i)]
+ASCII_CHARS:      List[str] = [chr(i) for i in range(0, 0x80) if chr(i)]
 
-UNICODE_CHARS: List[str] = [chr(i) for i in range(0, 0xD800) if chr(i)] \
-                         + [chr(i) for i in range(0xE000, 0x110000) if chr(i)]
+UNICODE_CHARS:    List[str] = [chr(i) for i in range(0, 0xD800) if chr(i)] \
+                            + [chr(i) for i in range(0xE000, 0x110000) if chr(i)]
 
 RESULTS_ASCII:    List[float] = [0.0, 0.0]
 RESULTS_UTF8:     List[float] = [0.0, 0.0]
@@ -82,12 +82,30 @@ if __name__ == "__main__":
     random_ascii_string: str = generate_ascii_string()
     random_unicode_string: str = generate_unicode_string()
 
-    measure_performance(COXave.ASCII.is_ascii, RESULTS_ASCII, "ascii", random_ascii_string.encode("ascii"))
-    measure_performance(COXave.UTF8.is_utf8, RESULTS_UTF8, "utf-8", random_unicode_string.encode("utf-8"))
-    measure_performance(COXave.UTF16.is_utf16, RESULTS_UTF16_BE, "utf-16-be", random_unicode_string.encode("utf-16-be"), endian=False, omp=True, only=False)
-    measure_performance(COXave.UTF16.is_utf16, RESULTS_UTF16_LE, "utf-16-le", random_unicode_string.encode("utf-16-le"), endian=True, omp=True, only=False)
-    measure_performance(COXave.UTF32.is_utf32, RESULTS_UTF32_BE, "utf-32-be", random_unicode_string.encode("utf-32-be"), endian=False)
-    measure_performance(COXave.UTF32.is_utf32, RESULTS_UTF32_LE, "utf-32-le", random_unicode_string.encode("utf-32-le"), endian=True)
+    measure_performance(
+        rust_method=COXave.ASCII.is_ascii, result=RESULTS_ASCII, encoding="ascii",
+        encoded=random_ascii_string.encode("ascii")
+    )
+    measure_performance(
+        rust_method=COXave.UTF8.is_utf8, result=RESULTS_UTF8, encoding="utf-8",
+        encoded=random_unicode_string.encode("utf-8")
+    )
+    measure_performance(
+        rust_method=COXave.UTF16.is_utf16, result=RESULTS_UTF16_BE, encoding="utf-16-be",
+        encoded=random_unicode_string.encode("utf-16-be"), endian=False, omp=True, only=False
+    )
+    measure_performance(
+        rust_method=COXave.UTF16.is_utf16, result=RESULTS_UTF16_LE, encoding="utf-16-le",
+        encoded=random_unicode_string.encode("utf-16-le"), endian=True, omp=True, only=False
+    )
+    measure_performance(
+        rust_method=COXave.UTF32.is_utf32, result=RESULTS_UTF32_BE, encoding="utf-32-be",
+        encoded=random_unicode_string.encode("utf-32-be"), endian=False
+    )
+    measure_performance(
+        rust_method=COXave.UTF32.is_utf32, result=RESULTS_UTF32_LE, encoding="utf-32-le",
+        encoded=random_unicode_string.encode("utf-32-le"), endian=True
+    )
 
     print(
         f"[ASCII] Time: is_ascii    = {RESULTS_ASCII[0]:.10f}s, Python (decode) = {RESULTS_ASCII[1]:.10f}s\n"
