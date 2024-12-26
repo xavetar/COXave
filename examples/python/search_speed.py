@@ -24,7 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from typing import Callable, List
+from typing import Callable, Tuple, List, cast
 
 import time
 import random
@@ -35,6 +35,9 @@ LENGTH_TO_TEST: int = 100_000_000
 
 ASCII_CHARS:      List[str] = [chr(i) for i in range(0, 0x80) if chr(i)]
 
+UNICODE_CHARS:    List[str] = [chr(i) for i in range(0, 0xD800) if chr(i)] \
+                            + [chr(i) for i in range(0xE000, 0x110000) if chr(i)]
+
 RESULTS_ASCII:    List[float] = [0.0, 0.0]
 RESULTS_UTF32_BE: List[float] = [0.0, 0.0]
 RESULTS_UTF32_LE: List[float] = [0.0, 0.0]
@@ -43,21 +46,27 @@ def generate_ascii_string() -> str:
     return ''.join(random.choice(ASCII_CHARS) for _ in range(LENGTH_TO_TEST))
 
 
-def measure_performance(rust_method: Callable, result: List[float],
+def generate_unicode_string() -> str:
+    return ''.join(random.choice(UNICODE_CHARS) for _ in range(LENGTH_TO_TEST))
+
+
+def measure_performance(rust_method: Callable, result: List[float], encoding: str,
                         encoded: bytes, pattern: bytes, all_matches: bool, **kwargs):
 
     start_time: float = time.time()
 
     if kwargs:
-        rust_method(encoded, pattern, all_matches=all_matches, limit=None, **kwargs)
+        index_rust = rust_method(encoded, pattern, all_matches=all_matches, limit=None, **kwargs)
     else:
-        rust_method(encoded, pattern, all_matches=all_matches, limit=None)
+        index_rust = rust_method(encoded, pattern, all_matches=all_matches, limit=None)
 
     result[0] += time.time() - start_time
 
     start_time = time.time()
 
-    encoded.find(pattern)
+    index_python = encoded.find(pattern)
+
+    if index_rust[0] != index_python: print(f"[{encoding.upper()}] Mismatch found! My Result: {index_rust[0]} | Python Result: {index_python}")
 
     result[1] += time.time() - start_time
 
@@ -69,20 +78,21 @@ if __name__ == "__main__":
     pattern_string: str = "test1234567890!@#$%^&*()"
 
     random_ascii_string: str = generate_ascii_string() + pattern_string
+    random_unicode_string: str = generate_unicode_string() + pattern_string
 
     measure_performance(
-        rust_method=COXave.ASCII.search_pattern, result=RESULTS_ASCII,
-        encoded=random_ascii_string.encode("ascii"), pattern=pattern_string.encode("ascii"), all_matches=True
+        rust_method=COXave.ASCII.search_pattern, result=RESULTS_ASCII, encoding="ascii",
+        encoded=random_ascii_string.encode("ascii"), pattern=pattern_string.encode("ascii"), all_matches=False
     )
 
     measure_performance(
-        rust_method=COXave.UTF32.search_pattern, result=RESULTS_UTF32_LE,
-        encoded=random_ascii_string.encode("utf-32-be"), pattern=pattern_string.encode("utf-32-be"), all_matches=True, endian=False
+        rust_method=COXave.UTF32.search_pattern, result=RESULTS_UTF32_BE, encoding="utf-32-be",
+        encoded=random_unicode_string.encode("utf-32-be"), pattern=pattern_string.encode("utf-32-be"), all_matches=False, endian=False
     )
 
     measure_performance(
-        rust_method=COXave.UTF32.search_pattern, result=RESULTS_UTF32_BE,
-        encoded=random_ascii_string.encode("utf-32-le"), pattern=pattern_string.encode("utf-32-le"), all_matches=True, endian=True
+        rust_method=COXave.UTF32.search_pattern, result=RESULTS_UTF32_LE, encoding="utf-32-le",
+        encoded=random_unicode_string.encode("utf-32-le"), pattern=pattern_string.encode("utf-32-le"), all_matches=False, endian=True
     )
 
     print(
