@@ -170,7 +170,7 @@ impl UTF32 {
                 } else {
                     while index < array_length {
                         if array[index] != pattern[0] { index += 1_usize }
-                        else { if pattern_length > 1 { start_index = index; index += 1; matches = 1; break } else { search_result.push(index); index += 1; } }
+                        else { if pattern_length > 1 { start_index = index; index += 1; matches = 1; break } else { search_result.push(index * size_of::<u32>()); index += 1; } }
                     }
                 }
             }
