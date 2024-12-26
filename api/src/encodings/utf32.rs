@@ -145,7 +145,13 @@ impl UTF32 {
         };
 
         return if UTF32::is_utf32_from_byte_array(array_ptr, endian) && UTF32::is_utf32_from_byte_array(pattern_ptr, endian) {
-            let (mut index, mut matches, mut start_index, last_pattern_index): (usize, usize, usize, usize) = (0_usize, 0_usize, 0_usize, pattern_length - 1_usize);
+            let (
+                mut index, mut matches, mut start_index, last_pattern_index, penultimate_pattern_index
+            ): (
+                usize, usize, usize, usize, usize
+            ) = (
+                0_usize, 0_usize, 0_usize, pattern_length - 1_usize, pattern_length - 2_usize
+            );
 
             let mut next_index: usize = 0_usize;
 
@@ -153,9 +159,9 @@ impl UTF32 {
                 if matches != 0 {
                     if start_index + last_pattern_index >= array_length { return search_result; }
                     else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
-                        while matches < pattern_length {
+                        while matches < last_pattern_index {
                             if array[index] == pattern[matches] {
-                                if matches != last_pattern_index { matches += 1; index += 1; }
+                                if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
                                 else { search_result.push(start_index * size_of::<u32>()); matches = 0_usize; if all_matches { break; } else { return search_result; }}
                             } else {
                                 if next_index > 0 { start_index = next_index; index = next_index + 1_usize; matches = 1_usize; next_index = 0_usize; break; }
