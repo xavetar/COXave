@@ -95,37 +95,53 @@ impl ASCII {
 
         return if ASCII::is_ascii_from_byte_array(array) && ASCII::is_ascii_from_byte_array(pattern) {
             let (
-                mut index, mut matches, mut start_index, last_pattern_index, penultimate_pattern_index
+                mut index, mut next_index, mut matches, mut start_index, last_pattern_index, penultimate_pattern_index
             ): (
-                usize, usize, usize, usize, usize
+                usize, usize, usize, usize, usize, usize
             ) = (
-                0_usize, 0_usize, 0_usize, pattern_length - 1_usize, pattern_length - 2_usize
+                0_usize, 0_usize, 0_usize, 0_usize, pattern_length - 1_usize, pattern_length - 2_usize
             );
 
-            let mut next_index: usize = 0_usize;
+            if pattern_length == 1 {
+                while index < array_length {
+                    if array[index] != pattern[0] { index += 1_usize }
+                    else { search_result.push(index); index += 1; if !all_matches { return search_result; }}
+                }
+            } else if pattern_length == 2 {
+                while index < array_length {
+                    if array[index] != pattern[0] { index += 1_usize; continue; }
+                    else {
+                        next_index = index + 1_usize;
 
-            while index < array_length {
-                if matches != 0 {
-                    if start_index + last_pattern_index >= array_length { return search_result; }
-                    else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
-                        while matches < last_pattern_index {
-                            if array[index] == pattern[matches] {
-                                if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
-                                else { search_result.push(start_index); matches = 0_usize; if all_matches { break; } else { return search_result; }}
-                            } else {
-                                if next_index > 0 { start_index = next_index; index = next_index + 1_usize; matches = 1_usize; next_index = 0_usize; break; }
-                                else { matches = 0_usize; break; }
+                        if next_index >= array_length { return search_result; }
+                        else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
+                        else { search_result.push(index); index += 2_usize; if !all_matches { return search_result; } else { continue; } }
+                    }
+                }
+            } else if pattern_length >= 3 {
+                while index < array_length {
+                    if matches != 0 {
+                        if start_index + last_pattern_index >= array_length { return search_result; }
+                        else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
+                            while matches < last_pattern_index {
+                                if array[index] == pattern[matches] {
+                                    if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
+                                    else { search_result.push(start_index); matches = 0_usize; if all_matches { break; } else { return search_result; }}
+                                } else {
+                                    if next_index > 0 { start_index = next_index; index = next_index + 1_usize; matches = 1_usize; next_index = 0_usize; break; }
+                                    else { matches = 0_usize; break; }
+                                }
+
+                                if next_index == 0_usize { if array[index] == pattern[0] { next_index = index; } }
                             }
-
-                            if next_index == 0_usize { if array[index] == pattern[0] { next_index = index; } }
+                        } else {
+                            matches = 0_usize; continue;
                         }
                     } else {
-                        matches = 0_usize; continue;
-                    }
-                } else {
-                    while index < array_length {
-                        if array[index] != pattern[0] { index += 1_usize }
-                        else { if pattern_length > 1 { start_index = index; index += 1; matches = 1; break } else { search_result.push(index); index += 1; } }
+                        while index < array_length {
+                            if array[index] != pattern[0] { index += 1_usize }
+                            else { start_index = index; index += 1; matches = 1; break }
+                        }
                     }
                 }
             }
