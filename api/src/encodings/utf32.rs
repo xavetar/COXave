@@ -93,15 +93,15 @@ impl UTF32 {
 
         let (mut index, mut indivisible_code_array): (usize, [u8; 16_usize]) = (0_usize, [0_u8; 16_usize]);
 
-        return if length == 0 || length % UTF32::__ENCODING_BYTES != 0_usize { false }
+        return if length == 0_usize || length % UTF32::__ENCODING_BYTES != 0_usize { false }
         else if length < 16_usize {
-            while index < length { indivisible_code_array[index] = array[index]; index += 1; }
+            while index < length { indivisible_code_array[index] = array[index]; index += 1_usize; }
 
             UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(indivisible_code_array.as_ptr() as *const u128, 1_usize) }, endian)
         } else {
             let indivisible: usize = length % 16_usize;
 
-            if indivisible != 0 {
+            if indivisible != 0_usize {
                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1; }
 
                 if !UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(indivisible_code_array.as_ptr() as *const u128, 1_usize) }, endian) { false }
@@ -123,7 +123,7 @@ impl UTF32 {
             Some(limit) => {
                 let (mut array_length, pattern_length): (usize, usize) = (array.len(), pattern.len());
 
-                if (pattern_length == 0) || (array_length == 0) { return search_result; }
+                if (pattern_length == 0_usize) || (array_length == 0_usize) { return search_result; }
                 else if limit > 0_usize {
                     if limit >= array_length { (array_length, pattern_length) }
                     else {
@@ -138,7 +138,7 @@ impl UTF32 {
                 let (array_length, pattern_length): (usize, usize) = (array.len(), pattern.len());
 
                 if pattern_length > array_length { return search_result; }
-                else if (pattern_length == 0) || (array_length == 0) { return search_result; }
+                else if (pattern_length == 0_usize) || (array_length == 0_usize) { return search_result; }
 
                 (array.len(), pattern.len())
             }
@@ -153,45 +153,43 @@ impl UTF32 {
                 0_usize, 0_usize, 0_usize, 0_usize, pattern_length - 1_usize, pattern_length - 2_usize
             );
 
-            if pattern_length == 1 {
+            if pattern_length == 1_usize {
                 while index < array_length {
-                    if array[index] != pattern[0] { index += 1_usize }
-                    else { search_result.push(index * size_of::<u32>()); index += 1; if !all_matches { return search_result; }}
+                    if array[index] != pattern[0_usize] { index += 1_usize }
+                    else { search_result.push(index * size_of::<u32>()); index += 1_usize; if !all_matches { return search_result; } }
                 }
-            } else if pattern_length == 2 {
+            } else if pattern_length == 2_usize {
                 while index < array_length {
-                    if array[index] != pattern[0] { index += 1_usize; continue; }
+                    if array[index] != pattern[0_usize] { index += 1_usize; continue; }
                     else {
                         next_index = index + 1_usize;
 
                         if next_index >= array_length { return search_result; }
-                        else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
+                        else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
                         else { search_result.push(index * size_of::<u32>()); index += 2_usize; if !all_matches { return search_result; } else { continue; } }
                     }
                 }
-            } else if pattern_length >= 3 {
+            } else if pattern_length >= 3_usize {
                 while index < array_length {
-                    if matches != 0 {
+                    if matches != 0_usize {
                         if start_index + last_pattern_index >= array_length { return search_result; }
                         else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
                             while matches < last_pattern_index {
                                 if array[index] == pattern[matches] {
                                     if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
-                                    else { search_result.push(start_index * size_of::<u32>()); matches = 0_usize; if all_matches { break; } else { return search_result; }}
+                                    else { search_result.push(start_index * size_of::<u32>()); matches = 0_usize; if all_matches { break; } else { return search_result; } }
                                 } else {
-                                    if next_index > 0 { start_index = next_index; index = next_index + 1_usize; matches = 1_usize; next_index = 0_usize; break; }
+                                    if next_index > 0_usize { start_index = next_index; index = next_index + 1_usize; matches = 1_usize; next_index = 0_usize; break; }
                                     else { matches = 0_usize; break; }
                                 }
 
-                                if next_index == 0_usize { if array[index] == pattern[0] { next_index = index; } }
+                                if next_index == 0_usize { if array[index] == pattern[0_usize] { next_index = index; } }
                             }
-                        } else {
-                            matches = 0_usize; continue;
-                        }
+                        } else { matches = 0_usize; continue; }
                     } else {
                         while index < array_length {
-                            if array[index] != pattern[0] { index += 1_usize }
-                            else { start_index = index; index += 1; matches = 1; break }
+                            if array[index] != pattern[0_usize] { index += 1_usize }
+                            else { start_index = index; index += 1_usize; matches = 1_usize; break }
                         }
                     }
                 }

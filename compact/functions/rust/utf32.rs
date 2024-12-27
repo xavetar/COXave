@@ -67,7 +67,7 @@ impl UTF32 {
     pub const fn is_utf32_from_byte_array(bytes: &[u8], endian: bool) -> bool {
         let length: usize = bytes.len();
 
-        return if length == 0 || length % UTF32::__ENCODING_BYTES != 0_usize { false }
+        return if length == 0_usize || length % UTF32::__ENCODING_BYTES != 0_usize { false }
         else { UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u32>(bytes.as_ptr() as *const u32, length / UTF32::__ENCODING_BYTES) }, endian) }
     }
 
@@ -84,7 +84,7 @@ impl UTF32 {
             Some(limit) => {
                 let (mut array_length, pattern_length): (usize, usize) = (array.len(), pattern.len());
 
-                if (pattern_length == 0) || (array_length == 0) { return search_result; }
+                if (pattern_length == 0_usize) || (array_length == 0_usize) { return search_result; }
                 else if limit > 0_usize {
                     if limit >= array_length { (array_length, pattern_length) }
                     else {
@@ -99,7 +99,7 @@ impl UTF32 {
                 let (array_length, pattern_length): (usize, usize) = (array.len(), pattern.len());
 
                 if pattern_length > array_length { return search_result; }
-                else if (pattern_length == 0) || (array_length == 0) { return search_result; }
+                else if (pattern_length == 0_usize) || (array_length == 0_usize) { return search_result; }
 
                 (array.len(), pattern.len())
             }
@@ -110,9 +110,9 @@ impl UTF32 {
 
             while index < array_length {
                 if array[index] == pattern[matches] {
-                    if matches == 0 { matches += 1_usize; start_index = index; } else { matches += 1_usize }
+                    if matches == 0_usize { matches += 1_usize; start_index = index; } else { matches += 1_usize }
 
-                    if pattern_length == matches { search_result.push(start_index); matches = 0; start_index = 0; if !all_matches { return search_result; } }
+                    if pattern_length == matches { search_result.push(start_index); matches = 0_usize; start_index = 0_usize; if !all_matches { return search_result; } }
                 } else { matches = 0_usize; start_index = 0_usize; }
 
                 index += 1;

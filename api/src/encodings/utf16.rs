@@ -120,7 +120,7 @@ impl UTF16 {
         if endian {
             if omp {
                 if only {
-                    while index < length { if UTF16::is_not_omp(swap_endian(array[index]), swap_endian(array[index + 1])) {return false; }; index += 2_usize; }
+                    while index < length { if UTF16::is_not_omp(swap_endian(array[index]), swap_endian(array[index + 1_usize])) {return false; }; index += 2_usize; }
                 } else {
                     let mut swapped: u16;
 
@@ -128,7 +128,7 @@ impl UTF16 {
                         swapped = swap_endian(array[index]);
 
                         if UTF16::is_bmp(swapped) { index += 1_usize; }
-                        else if UTF16::is_omp(swapped, swap_endian(array[index + 1])) { index += 2_usize; }
+                        else if UTF16::is_omp(swapped, swap_endian(array[index + 1_usize])) { index += 2_usize; }
                         else { return false; }
                     }
                 }
@@ -138,11 +138,11 @@ impl UTF16 {
         } else {
             if omp {
                 if only {
-                    while index < length { if UTF16::is_not_omp(array[index], array[index + 1]) { return false; }; index += 2_usize; }
+                    while index < length { if UTF16::is_not_omp(array[index], array[index + 1_usize]) { return false; }; index += 2_usize; }
                 } else {
                     while index < length {
                         if UTF16::is_bmp(array[index]) { index += 1_usize }
-                        else if UTF16::is_omp(array[index], array[index + 1]) { index += 2_usize }
+                        else if UTF16::is_omp(array[index], array[index + 1_usize]) { index += 2_usize }
                         else { return false; }
                     }
                 }
@@ -155,11 +155,11 @@ impl UTF16 {
         if endian {
             if omp {
                 if only {
-                    while index < length { if UTF16::is_not_omp(array[index], array[index + 1]) { return false; }; index += 2_usize; }
+                    while index < length { if UTF16::is_not_omp(array[index], array[index + 1_usize]) { return false; }; index += 2_usize; }
                 } else {
                     while index < length {
                         if UTF16::is_bmp(array[index]) { index += 1_usize }
-                        else if UTF16::is_omp(array[index], array[index + 1]) { index += 2_usize }
+                        else if UTF16::is_omp(array[index], array[index + 1_usize]) { index += 2_usize }
                         else { return false; }
                     }
                 }
@@ -169,7 +169,7 @@ impl UTF16 {
         } else {
             if omp {
                 if only {
-                    while index < length { if UTF16::is_not_omp(swap_endian(array[index]), swap_endian(array[index + 1])) { return false; }; index += 2_usize; }
+                    while index < length { if UTF16::is_not_omp(swap_endian(array[index]), swap_endian(array[index + 1_usize])) { return false; }; index += 2_usize; }
                 } else {
                     let mut swapped: u16;
 
@@ -177,7 +177,7 @@ impl UTF16 {
                         swapped = swap_endian(array[index]);
 
                         if UTF16::is_bmp(swapped) { index += 1_usize; }
-                        else if UTF16::is_omp(swapped, swap_endian(array[index + 1])) { index += 2_usize; }
+                        else if UTF16::is_omp(swapped, swap_endian(array[index + 1_usize])) { index += 2_usize; }
                         else { return false; }
                     }
                 }
@@ -193,7 +193,7 @@ impl UTF16 {
 
         let length: usize = array.len();
 
-        if length == 0 { return false; }
+        if length == 0_usize { return false; }
         else if omp && only {
             if length % UTF16::__ENCODING_SURROGATE_PAIR_BYTES != 0_usize { return false; }
         } else {
