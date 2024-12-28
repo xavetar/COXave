@@ -94,13 +94,11 @@ impl ASCII {
         };
 
         return if ASCII::is_ascii_from_byte_array(array) && ASCII::is_ascii_from_byte_array(pattern) {
-            let (
-                mut index, mut next_index, mut matches, mut start_index, last_pattern_index, penultimate_pattern_index
-            ): (
-                usize, usize, usize, usize, usize, usize
-            ) = (
-                0_usize, 0_usize, 0_usize, 0_usize, pattern_length - 1_usize, pattern_length - 2_usize
-            );
+            let (mut index, mut next_index, mut matches, mut start_index, last_pattern_index)
+            :
+            (usize, usize, usize, usize, usize)
+            =
+            (0_usize, 0_usize, 0_usize, 0_usize, pattern_length - 1_usize);
 
             if pattern_length == 1_usize {
                 while index < array_length {
@@ -119,6 +117,8 @@ impl ASCII {
                     }
                 }
             } else if pattern_length >= 3_usize {
+                let penultimate_pattern_index: usize = pattern_length - 2_usize;
+
                 while index < array_length {
                     if matches != 0_usize {
                         if start_index + last_pattern_index >= array_length { return search_result; }
