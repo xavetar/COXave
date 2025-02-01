@@ -69,7 +69,7 @@ impl UTF16 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (bad_range_mask, bad_result_mask): (uint16x4_t, uint16x4_t) =
-            unsafe { (vdup_n_u16(0xF800), vdup_n_u16(0xD800)) };
+        unsafe { (vdup_n_u16(0xF800), vdup_n_u16(0xD800)) };
 
         if endian {
             while index < length {
@@ -104,7 +104,7 @@ impl UTF16 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (bad_range_mask, bad_result_mask): (uint16x8_t, uint16x8_t) =
-            unsafe { (vdupq_n_u16(0xF800), vdupq_n_u16(0xD800)) };
+        unsafe { (vdupq_n_u16(0xF800), vdupq_n_u16(0xD800)) };
 
         if endian {
             while index < length {
@@ -140,12 +140,12 @@ impl UTF16 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (restricted_less_than_mask, restricted_big_than_mask): (uint16x4_t, uint16x4_t) =
-            unsafe {
-                (
-                    vld1_u16([0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
-                    vld1_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
-                )
-            };
+        unsafe {
+            (
+                vld1_u16([0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
+                vld1_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
+            )
+        };
 
         if endian {
             while index < length {
@@ -181,12 +181,12 @@ impl UTF16 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (restricted_less_than_mask, restricted_big_than_mask): (uint16x8_t, uint16x8_t) =
-            unsafe {
-                (
-                    vld1q_u16([0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
-                    vld1q_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
-                )
-            };
+        unsafe {
+            (
+                vld1q_u16([0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
+                vld1q_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
+            )
+        };
 
         if endian {
             while index < length {

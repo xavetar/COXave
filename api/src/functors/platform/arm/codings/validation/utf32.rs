@@ -66,7 +66,7 @@ impl UTF32 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (max_mask, range_mask, bad_range_mask, bad_result_mask): (uint32x2_t, uint32x2_t, uint32x2_t, uint32x2_t) =
-            unsafe { (vdup_n_u32(0x0010FFFF), vdup_n_u32(0x0000FFFF), vdup_n_u32(0x0000F800), vdup_n_u32(0x0000D800)) };
+        unsafe { (vdup_n_u32(0x0010FFFF), vdup_n_u32(0x0000FFFF), vdup_n_u32(0x0000F800), vdup_n_u32(0x0000D800)) };
 
         if endian {
             while index < length {
@@ -104,7 +104,7 @@ impl UTF32 {
         let (mut index, length): (usize, usize) = (0_usize, array.len());
 
         let (max_mask, range_mask, bad_range_mask, bad_result_mask): (uint32x4_t, uint32x4_t, uint32x4_t, uint32x4_t) =
-            unsafe { (vdupq_n_u32(0x0010FFFF), vdupq_n_u32(0x0000FFFF), vdupq_n_u32(0x0000F800), vdupq_n_u32(0x0000D800)) };
+        unsafe { (vdupq_n_u32(0x0010FFFF), vdupq_n_u32(0x0000FFFF), vdupq_n_u32(0x0000F800), vdupq_n_u32(0x0000D800)) };
 
         if endian {
             while index < length {
