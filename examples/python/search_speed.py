@@ -39,6 +39,9 @@ UNICODE_CHARS:    List[str] = [chr(i) for i in range(0, 0xD800) if chr(i)] \
                             + [chr(i) for i in range(0xE000, 0x110000) if chr(i)]
 
 RESULTS_ASCII:    List[float] = [0.0, 0.0]
+RESULTS_UTF8:     List[float] = [0.0, 0.0]
+RESULTS_UTF16_BE: List[float] = [0.0, 0.0]
+RESULTS_UTF16_LE: List[float] = [0.0, 0.0]
 RESULTS_UTF32_BE: List[float] = [0.0, 0.0]
 RESULTS_UTF32_LE: List[float] = [0.0, 0.0]
 
@@ -87,6 +90,24 @@ if __name__ == "__main__":
     )
 
     measure_performance(
+        rust_method=COXave.UTF8.search_pattern, result=RESULTS_UTF8, encoding="utf-8",
+        encoded=random_unicode_string.encode("utf-8"), pattern=pattern_string.encode("utf-8"),
+        overlapping=False, all_matches=False
+    )
+
+    measure_performance(
+        rust_method=COXave.UTF16.search_pattern, result=RESULTS_UTF16_BE, encoding="utf-16-be",
+        encoded=random_unicode_string.encode("utf-16-be"), pattern=pattern_string.encode("utf-16-be"),
+        omp=True, only=False, overlapping=False, all_matches=False
+    )
+
+    measure_performance(
+        rust_method=COXave.UTF16.search_pattern, result=RESULTS_UTF16_LE, encoding="utf-16-le",
+        encoded=random_unicode_string.encode("utf-16-le"), pattern=pattern_string.encode("utf-16-le"),
+        omp=True, only=False, overlapping=False, all_matches=False
+    )
+
+    measure_performance(
         rust_method=COXave.UTF32.search_pattern, result=RESULTS_UTF32_BE, encoding="utf-32-be",
         encoded=random_unicode_string.encode("utf-32-be"), pattern=pattern_string.encode("utf-32-be"),
         overlapping=False, all_matches=False
@@ -100,6 +121,9 @@ if __name__ == "__main__":
 
     print(
         f"[ASCII] Time: search_pattern = {RESULTS_ASCII[0]:.10f}s, Python (find) = {RESULTS_ASCII[1]:.10f}s\n"
+        f"[UTF-8] Time: search_pattern = {RESULTS_UTF8[0]:.10f}s, Python (find) = {RESULTS_UTF8[1]:.10f}s\n"
+        f"[UTF-16BE] Time: search_pattern = {RESULTS_UTF16_BE[0]:.10f}s, Python (find) = {RESULTS_UTF16_BE[1]:.10f}s\n"
+        f"[UTF-16LE] Time: search_pattern = {RESULTS_UTF16_LE[0]:.10f}s, Python (find) = {RESULTS_UTF16_LE[1]:.10f}s\n"
         f"[UTF-32BE] Time: search_pattern = {RESULTS_UTF32_BE[0]:.10f}s, Python (find) = {RESULTS_UTF32_BE[1]:.10f}s\n"
         f"[UTF-32LE] Time: search_pattern = {RESULTS_UTF32_LE[0]:.10f}s, Python (find) = {RESULTS_UTF32_LE[1]:.10f}s\n"
     )
