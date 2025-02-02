@@ -48,22 +48,23 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                 if (pattern_length == 0_usize) || (array_length == 0_usize) || (pattern_length > array_length) {
                     return (0_usize, 0_usize, false);
                 } else if limit > 0_usize {
-                    if limit >= array_length { (array_length, pattern_length, true) }
+                    if limit >= array_length { (array_length - (pattern_length - 1_usize), pattern_length, true) }
                     else {
                         array_length -= limit;
 
                         if pattern_length > array_length { return (0_usize, 0_usize, false); }
-                        else { (array_length, pattern_length, true) }
+                        else { (array_length - (pattern_length - 1_usize), pattern_length, true) }
                     }
                 } else { return (0_usize, 0_usize, false); }
             }
             None => {
                 let (array_length, pattern_length): (usize, usize) = (array.len(), pattern.len());
 
-                if pattern_length > array_length { return (0_usize, 0_usize, false); }
-                else if (pattern_length == 0_usize) || (array_length == 0_usize) { return (0_usize, 0_usize, false); }
+                if (pattern_length == 0_usize) || (array_length == 0_usize) || (pattern_length > array_length) {
+                    return (0_usize, 0_usize, false);
+                }
 
-                (array.len(), pattern.len(), true)
+                (array_length - (pattern_length - 1_usize), pattern_length, true)
             }
         };
     }
@@ -91,18 +92,16 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                 else {
                     next_index = index + 1_usize;
 
-                    if next_index >= array_length { return search_result; }
-                    else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
+                    if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
                     else { search_result.push(index * size_of::<T>()); return search_result; }
                 }
             }
         } else if pattern_length >= 3_usize {
             let penultimate_pattern_index: usize = pattern_length - 2_usize;
 
-            while index < array_length {
+            while start_index < array_length {
                 if matches != 0_usize {
-                    if start_index + last_pattern_index >= array_length { return search_result; }
-                    else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
+                    if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
                         while matches < last_pattern_index {
                             if array[index] == pattern[matches] {
                                 if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
@@ -116,7 +115,7 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while index < array_length {
+                    while start_index < array_length {
                         if array[index] != pattern[0_usize] { index += 1_usize }
                         else { start_index = index; index += 1_usize; matches = 1_usize; break }
                     }
@@ -150,18 +149,16 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                 else {
                     next_index = index + 1_usize;
 
-                    if next_index >= array_length { return search_result; }
-                    else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
+                    if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
                     else { search_result.push(index * size_of::<T>()); index += 2_usize; continue; }
                 }
             }
         } else if pattern_length >= 3_usize {
             let penultimate_pattern_index: usize = pattern_length - 2_usize;
 
-            while index < array_length {
+            while start_index < array_length {
                 if matches != 0_usize {
-                    if start_index + last_pattern_index >= array_length { return search_result; }
-                    else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
+                    if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
                         while matches < last_pattern_index {
                             if array[index] == pattern[matches] {
                                 if matches != penultimate_pattern_index { matches += 1_usize; index += 1_usize; }
@@ -175,7 +172,7 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while index < array_length {
+                    while start_index < array_length {
                         if array[index] != pattern[0_usize] { index += 1_usize }
                         else { start_index = index; index += 1_usize; matches = 1_usize; break }
                     }
@@ -209,18 +206,16 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                 else {
                     next_index = index + 1_usize;
 
-                    if next_index >= array_length { return search_result; }
-                    else if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
+                    if array[next_index] != pattern[last_pattern_index] { if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
                     else { search_result.push(index * size_of::<T>()); if array[next_index] != pattern[0_usize] { index += 2_usize; continue; } else { index += 1_usize; continue; } }
                 }
             }
         } else if pattern_length >= 3_usize {
             let penultimate_pattern_index: usize = pattern_length - 2_usize;
 
-            while index < array_length {
+            while start_index < array_length {
                 if matches != 0_usize {
-                    if start_index + last_pattern_index >= array_length { return search_result; }
-                    else if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
+                    if array[start_index + last_pattern_index] == pattern[last_pattern_index] {
                         while matches < last_pattern_index {
                             if array[index] == pattern[matches] {
                                 if matches != penultimate_pattern_index {
@@ -240,7 +235,7 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while index < array_length {
+                    while start_index < array_length {
                         if array[index] != pattern[0_usize] { index += 1_usize }
                         else { start_index = index; index += 1_usize; matches = 1_usize; break }
                     }
