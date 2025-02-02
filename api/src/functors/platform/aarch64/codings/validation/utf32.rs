@@ -46,6 +46,7 @@ use std::{
         aarch64::{
             uint32x2_t, uint32x4_t,
             vdup_n_u32, vdupq_n_u32,
+            vmaxv_u32, vmaxvq_u32,
             vcle_u32, vcleq_u32,
             vcgt_u32, vcgtq_u32,
             vceq_u32, vceqq_u32,
@@ -76,8 +77,8 @@ impl UTF32 {
                     unsafe { read_unaligned(black_box(&array[index])) }
                 };
 
-                if unsafe { transmute::<uint32x2_t, u64>(vcgt_u32(value, max_mask)) } > 0_u64 { return false; }
-                else if unsafe { transmute::<uint32x2_t, u64>(vceq_u32(vand_u32(vand_u32(value, vcle_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } > 0_u64 { return false; }
+                if unsafe { vmaxv_u32(vcgt_u32(value, max_mask)) } != 0_u32 { return false; }
+                else if unsafe { vmaxv_u32(vceq_u32(vand_u32(vand_u32(value, vcle_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } != 0_u32 { return false; }
 
                 index += 1_usize;
             }
@@ -89,8 +90,8 @@ impl UTF32 {
                     unsafe { vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(read_unaligned(black_box(&array[index]))))) }
                 };
 
-                if unsafe { transmute::<uint32x2_t, u64>(vcgt_u32(value, max_mask)) } > 0_u64 { return false; }
-                else if unsafe { transmute::<uint32x2_t, u64>(vceq_u32(vand_u32(vand_u32(value, vcle_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } > 0_u64 { return false; }
+                if unsafe { vmaxv_u32(vcgt_u32(value, max_mask)) } != 0_u32 { return false; }
+                else if unsafe { vmaxv_u32(vceq_u32(vand_u32(vand_u32(value, vcle_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } != 0_u32 { return false; }
 
                 index += 1_usize;
             }
@@ -114,8 +115,8 @@ impl UTF32 {
                     unsafe { read_unaligned(black_box(&array[index])) }
                 };
 
-                if unsafe { transmute::<uint32x4_t, u128>(vcgtq_u32(value, max_mask)) } > 0_u128 { return false; }
-                else if unsafe { transmute::<uint32x4_t, u128>(vceqq_u32(vandq_u32(vandq_u32(value, vcleq_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } > 0_u128 { return false; }
+                if unsafe { vmaxvq_u32(vcgtq_u32(value, max_mask)) } != 0_u32 { return false; }
+                else if unsafe { vmaxvq_u32(vceqq_u32(vandq_u32(vandq_u32(value, vcleq_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } != 0_u32 { return false; }
 
                 index += 1_usize;
             }
@@ -127,8 +128,8 @@ impl UTF32 {
                     unsafe { vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(read_unaligned(black_box(&array[index]))))) }
                 };
 
-                if unsafe { transmute::<uint32x4_t, u128>(vcgtq_u32(value, max_mask)) } > 0_u128 { return false; }
-                else if unsafe { transmute::<uint32x4_t, u128>(vceqq_u32(vandq_u32(vandq_u32(value, vcleq_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } > 0_u128 { return false; }
+                if unsafe { vmaxvq_u32(vcgtq_u32(value, max_mask)) } != 0_u32 { return false; }
+                else if unsafe { vmaxvq_u32(vceqq_u32(vandq_u32(vandq_u32(value, vcleq_u32(value, range_mask)), bad_range_mask), bad_result_mask)) } != 0_u32 { return false; }
 
                 index += 1_usize;
             }

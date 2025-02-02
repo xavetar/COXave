@@ -47,6 +47,7 @@ use std::{
             uint8x8_t, uint8x16_t,
             vdup_n_u8, vdupq_n_u8,
             vand_u8, vandq_u8,
+            vmaxv_u8, vmaxvq_u8
         }
     }
 };
@@ -56,7 +57,7 @@ impl ASCII {
     fn is_ascii_8x8(array: &[uint8x8_t]) -> bool {
         let (mut index, length, mask): (usize, usize, uint8x8_t) = (0_usize, array.len(), unsafe { vdup_n_u8(0x80) });
 
-        while index < length { if unsafe { transmute::<uint8x8_t, u64>(vand_u8(read_unaligned(black_box(&array[index])), mask)) } != 0_u64 { return false; } else { index += 1_usize; } }
+        while index < length { if unsafe { vmaxv_u8(vand_u8(read_unaligned(black_box(&array[index])), mask)) } != 0_u8 { return false; } else { index += 1_usize; } }
 
         return true;
     }
@@ -64,7 +65,7 @@ impl ASCII {
     fn is_ascii_8x16(array: &[uint8x16_t]) -> bool {
         let (mut index, length, mask): (usize, usize, uint8x16_t) = (0_usize, array.len(), unsafe { vdupq_n_u8(0x80) });
 
-        while index < length { if unsafe { transmute::<uint8x16_t, u128>(vandq_u8(read_unaligned(black_box(&array[index])), mask)) } != 0_u128 { return false; } else { index += 1_usize; } }
+        while index < length { if unsafe { vmaxvq_u8(vandq_u8(read_unaligned(black_box(&array[index])), mask)) } != 0_u8 { return false; } else { index += 1_usize; } }
 
         return true;
     }
