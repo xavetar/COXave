@@ -75,9 +75,9 @@ impl UTF16 {
         if endian {
             while index < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxv_u16(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
@@ -87,9 +87,9 @@ impl UTF16 {
         } else {
             while index < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxv_u16(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
@@ -110,9 +110,9 @@ impl UTF16 {
         if endian {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxvq_u16(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
@@ -122,9 +122,9 @@ impl UTF16 {
         } else {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxvq_u16(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
@@ -151,9 +151,9 @@ impl UTF16 {
         if endian {
             while index < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxv_u16(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
@@ -163,9 +163,9 @@ impl UTF16 {
         } else {
             while index < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxv_u16(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
@@ -192,9 +192,9 @@ impl UTF16 {
         if endian {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxvq_u16(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
@@ -204,9 +204,9 @@ impl UTF16 {
         } else {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxvq_u16(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
@@ -243,9 +243,9 @@ impl UTF16 {
         if endian {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 };
 
                 let any_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, any_part_surrogate_detect_mask), high_surrogate_detect_mask) };
@@ -336,9 +336,9 @@ impl UTF16 {
         } else {
             while index < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
                 };
 
                 let any_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, any_part_surrogate_detect_mask), high_surrogate_detect_mask) };

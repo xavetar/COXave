@@ -72,9 +72,9 @@ impl UTF32 {
         if endian {
             while index < length {
                 let value: uint32x2_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(read_unaligned::<uint32x2_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint32x2_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxv_u32(vcgt_u32(value, max_mask)) } != 0_u32 { return false; }
@@ -85,9 +85,9 @@ impl UTF32 {
         } else {
             while index < length {
                 let value: uint32x2_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint32x2_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(read_unaligned::<uint32x2_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxv_u32(vcgt_u32(value, max_mask)) } != 0_u32 { return false; }
@@ -110,9 +110,9 @@ impl UTF32 {
         if endian {
             while index < length {
                 let value: uint32x4_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(read_unaligned::<uint32x4_t>(black_box(&array[index]))))) }
                 } else {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint32x4_t>(black_box(&array[index])) }
                 };
 
                 if unsafe { vmaxvq_u32(vcgtq_u32(value, max_mask)) } != 0_u32 { return false; }
@@ -123,9 +123,9 @@ impl UTF32 {
         } else {
             while index < length {
                 let value: uint32x4_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned(black_box(&array[index])) }
+                    unsafe { read_unaligned::<uint32x4_t>(black_box(&array[index])) }
                 } else {
-                    unsafe { vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(read_unaligned(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(read_unaligned::<uint32x4_t>(black_box(&array[index]))))) }
                 };
 
                 if unsafe { vmaxvq_u32(vcgtq_u32(value, max_mask)) } != 0_u32 { return false; }
