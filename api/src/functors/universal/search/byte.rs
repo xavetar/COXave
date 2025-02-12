@@ -115,10 +115,12 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while start_index < array_length {
-                        if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
-                        else { start_index = index; index += 1_usize; matches = 1_usize; break }
-                    }
+                    if index < array_length {
+                        while start_index < array_length {
+                            if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
+                            else { start_index = index; index += 1_usize; matches = 1_usize; break; }
+                        }
+                    } else { start_index = index; }
                 }
             }
         }
@@ -172,10 +174,12 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while start_index < array_length {
-                        if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
-                        else { start_index = index; index += 1_usize; matches = 1_usize; break }
-                    }
+                    if index < array_length {
+                        while start_index < array_length {
+                            if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
+                            else { start_index = index; index += 1_usize; matches = 1_usize; break; }
+                        }
+                    } else { start_index = index; }
                 }
             }
         }
@@ -235,10 +239,12 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
                         }
                     } else { matches = 0_usize; continue; }
                 } else {
-                    while start_index < array_length {
-                        if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
-                        else { start_index = index; index += 1_usize; matches = 1_usize; break }
-                    }
+                    if index < array_length {
+                        while start_index < array_length {
+                            if array[index] != pattern[0_usize] { index += 1_usize; start_index = index; }
+                            else { start_index = index; index += 1_usize; matches = 1_usize; break; }
+                        }
+                    } else { start_index = index; }
                 }
             }
         }
