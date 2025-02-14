@@ -41,7 +41,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m512i,
             _mm512_loadu_si512,
             _mm512_set1_epi8,
@@ -60,7 +60,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m256i,
             _mm256_loadu_si256,
             _mm256_set1_epi8,
@@ -79,7 +79,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m128i,
             _mm_loadu_si128,
             _mm_set1_epi8,

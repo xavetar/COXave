@@ -41,7 +41,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m512i,
             __mmask32,
             _mm512_loadu_si512,
@@ -66,7 +66,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m256i,
             _mm256_loadu_si256,
             _mm256_set_epi16,
@@ -94,7 +94,7 @@ use std::{
         transmute
     },
     arch::{
-        x86_64::{
+        x86::{
             __m128i,
             _mm_loadu_si128,
             _mm_set_epi16,
@@ -115,7 +115,7 @@ use std::{
 #[cfg(all(target_feature = "sse2", target_feature = "ssse3", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
 use std::{
     arch::{
-        x86_64::{
+        x86::{
             _mm_set_epi8,
             _mm_shuffle_epi8
         }
@@ -125,7 +125,7 @@ use std::{
 #[cfg(all(target_feature = "sse2", not(target_feature = "ssse3"), not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
 use std::{
     arch::{
-        x86_64::{
+        x86::{
             _mm_sra_epi16,
             _mm_sll_epi16,
         }
