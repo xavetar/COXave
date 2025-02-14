@@ -43,7 +43,7 @@ use std::{
         read_unaligned
     },
     arch::{
-        aarch64::{
+        arm::{
             uint16x4_t, uint16x8_t,
             vdup_n_u16, vdupq_n_u16,
             vld1_u16, vld1q_u16,
