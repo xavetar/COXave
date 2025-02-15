@@ -5,7 +5,7 @@
 
 # COXave
 
-![COXave Logo](api/res/coxave-header.png)
+![COXave Logo](api/res/coxave-header.jpg)
 
 <div style="display: flex; justify-content: center; gap: 20px;">
     <a href="https://nowpayments.io/donation?api_key=NRH28QG-ABRM7CC-J7NVGXN-F8FTRS1&source=lk_donation&medium=referral" target="_blank">
