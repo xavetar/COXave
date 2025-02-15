@@ -27,4 +27,6 @@
  */
 
 pub mod codings;
+
+#[cfg(feature = "universal")]
 pub mod search;

@@ -26,18 +26,12 @@
  * THE SOFTWARE.
  */
 
-mod validation;
-mod search;
+mod ascii;
+mod utf8;
+mod utf16;
+mod utf32;
 
-mod unite {
-    use super::validation;
-    use super::search;
-
-    pub use validation::{*};
-    pub use search::{*};
-}
-
-pub use unite::{
-    ASCII,
-    UTF8, UTF16, UTF32
-};
+pub use ascii::{ASCII};
+pub use utf8::{UTF8};
+pub use utf16::{UTF16};
+pub use utf32::{UTF32};

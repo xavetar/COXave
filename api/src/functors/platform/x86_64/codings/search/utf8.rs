@@ -26,18 +26,32 @@
  * THE SOFTWARE.
  */
 
-mod validation;
-mod search;
-
-mod unite {
-    use super::validation;
-    use super::search;
-
-    pub use validation::{*};
-    pub use search::{*};
-}
-
-pub use unite::{
-    ASCII,
-    UTF8, UTF16, UTF32
+pub use crate::{
+    essence::{
+        UTF8
+    }
 };
+
+use crate::{
+    functors::{
+        platform::{
+            search::{
+                ByteSearch,
+            }
+        }
+    }
+};
+
+impl UTF8 {
+    pub fn search_pattern(array: &[u8], pattern: &[u8], overlapping: bool, all_matches: bool, limit: Option<usize>) -> Vec<usize> {
+        if all_matches {
+            if overlapping {
+                return ByteSearch::<i8>::search_all_overlapping(array, pattern, limit);
+            } else {
+                return ByteSearch::<i8>::search_all(array, pattern, limit);
+            }
+        } else {
+            return ByteSearch::<i8>::search_single(array, pattern, limit);
+        }
+    }
+}

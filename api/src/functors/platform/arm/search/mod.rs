@@ -26,18 +26,6 @@
  * THE SOFTWARE.
  */
 
-mod validation;
-mod search;
+mod byte;
 
-mod unite {
-    use super::validation;
-    use super::search;
-
-    pub use validation::{*};
-    pub use search::{*};
-}
-
-pub use unite::{
-    ASCII,
-    UTF8, UTF16, UTF32
-};
+pub use byte::{ByteSearch};

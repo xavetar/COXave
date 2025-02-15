@@ -47,6 +47,7 @@ mod x86;
 macro_rules! import_functions {
     ($platform:ident) => {
         pub use self::$platform::{codings};
+        pub use self::$platform::{search};
     };
 }
 

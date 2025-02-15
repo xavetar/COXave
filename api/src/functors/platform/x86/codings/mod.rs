@@ -27,14 +27,17 @@
  */
 
 mod validation;
+mod search;
 
 mod unite {
     use super::validation;
+    use super::search;
 
     pub use validation::{*};
+    pub use search::{*};
 }
 
 pub use unite::{
     ASCII,
-    UTF16, UTF32
+    UTF8, UTF16, UTF32
 };

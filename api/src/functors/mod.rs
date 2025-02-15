@@ -45,7 +45,8 @@ mod platform;
     not(feature = "universal")
 ))]
 pub use platform::{
-    codings
+    codings,
+    search
 };
 
 #[cfg(all(
@@ -54,5 +55,4 @@ pub use platform::{
 ))]
 pub use universal::{
     codings as non_simd_codings,
-    search
 };

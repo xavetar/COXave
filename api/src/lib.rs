@@ -39,7 +39,7 @@
 mod essence;
 mod functors;
 
-#[cfg(all(feature = "universal", not(any(feature = "python"))))]
+#[cfg(all(feature = "universal", not(feature = "python")))]
 pub use functors::{
     codings::{
         ASCII,

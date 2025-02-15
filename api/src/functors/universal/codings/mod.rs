@@ -27,6 +27,8 @@
  */
 
 mod validation;
+
+#[cfg(feature = "universal")]
 mod search;
 
 #[cfg(feature = "universal")]
@@ -47,14 +49,11 @@ pub use unite::{
 #[cfg(not(feature = "universal"))]
 mod unite {
     use super::validation;
-    use super::search;
 
     pub use validation::{UTF8};
-    pub use search::{*};
 }
 
 #[cfg(not(feature = "universal"))]
 pub use unite::{
-    ASCII,
-    UTF8, UTF16, UTF32
+    UTF8
 };
