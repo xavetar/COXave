@@ -54,8 +54,8 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
     const __m128i MASK_SECOND_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
 #else
-    const __m128i MASK_MSB_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
-    const __m128i MASK_LSB_BYTE_TO_PACK = _mm_set1_epi16(0xFF00);
+    const __m128i MASK_FIRST_BYTE_TO_PACK = _mm_set1_epi16(0xFF00);
+    const __m128i MASK_SECOND_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
 #endif
 
     size_t i = 0;
@@ -122,11 +122,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         );
 #else
         // SSE2: Извлекаем первые и вторые символы через маски
-        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, MASK_MSB_BYTE_TO_PACK);                       // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
-        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, MASK_LSB_BYTE_TO_PACK);                        // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
+        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, MASK_SECOND_BYTE_TO_PACK);                    // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
+        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, MASK_FIRST_BYTE_TO_PACK);                      // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
 
-        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, MASK_MSB_BYTE_TO_PACK);                     // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
-        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, MASK_LSB_BYTE_TO_PACK);                      // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
+        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, MASK_SECOND_BYTE_TO_PACK);                  // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
+        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, MASK_FIRST_BYTE_TO_PACK);                    // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
 
         __m128i low_hex_to_lsb_first = _mm_srli_epi16(low_hex_nibbles_first, 8);                                   // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
         __m128i low_hex_to_lsb_second = _mm_srli_epi16(low_hex_nibbles_second, 8);                                 // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
