@@ -37,12 +37,17 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         return;
     }
 
-    const __m512i MASK_LOW_NIBBLE = _mm512_set1_epi8(0x0F);
+    // Общие константы (ASCII)
+    const __m512i OFFSET_ASCII_DIGIT                  = _mm512_set1_epi8(0x30); // '0'
+    const __m512i OFFSET_ASCII_UPPER                  = _mm512_set1_epi8(0x37); // 'A' - 10
+    const __m512i OFFSET_ASCII_LOWER                  = _mm512_set1_epi8(0x57); // 'a' - 10
 
-    // Константы для преобразования
-    const __m512i OFFSET_ASCII_DIGIT = _mm512_set1_epi8('0');
-    const __m512i OFFSET_ASCII_UPPER = _mm512_set1_epi8('A' - 10);
-    const __m512i OFFSET_ASCII_LOWER = _mm512_set1_epi8('a' - 10);
+    const __m512i ASCII_TABLE_DIGITS_AFTER            = _mm512_set1_epi8(0x2F); // '0' - 1
+    const __m512i ASCII_TABLE_DIGITS_BEFORE           = _mm512_set1_epi8(0x3A); // '9' + 1
+    const __m512i ASCII_TABLE_ALPHABET_CAPITAL_AFTER  = _mm512_set1_epi8(0x40); // 'A' - 1
+    const __m512i ASCII_TABLE_ALPHABET_CAPITAL_BEFORE = _mm512_set1_epi8(0x47); // 'F' - 1
+    const __m512i ASCII_TABLE_ALPHABET_SMALL_AFTER    = _mm512_set1_epi8(0x60); // 'a' - 1
+    const __m512i ASCII_TABLE_ALPHABET_SMALL_BEFORE   = _mm512_set1_epi8(0x67); // 'f' - 1
 
     const __m512i SECOND_SHUFFLE = _mm512_set_epi8(
         -1, 15, -1, 13, -1, 11, -1, 9, -1, 7, -1, 5, -1, 3, -1, 1,
@@ -51,23 +56,33 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         -1, 15, -1, 13, -1, 11, -1, 9, -1, 7, -1, 5, -1, 3, -1, 1
     );
 
+    const __m512i MASK_SECOND_BYTE_TO_PACK = _mm512_set1_epi16(0x00FF);
+
+    const __m512i PERMUTE_MASK_ORDER_CORRECTION = _mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7);
+
     size_t i = 0;
 
     // Обработка по 128 символов (64 байта результата) за раз
     for (; i + 128 <= hex_len; i += 128) {
         // Загружаем 128 символов (64 пары)
-        __m512i chars_first = _mm512_loadu_si512((__m512i*)(hex + i));
-        __m512i chars_second = _mm512_loadu_si512((__m512i*)(hex + i + 64));
+        __m512i chars_first = _mm512_loadu_si512((__m512i*) (hex + i));
+        __m512i chars_second = _mm512_loadu_si512((__m512i*) (hex + i + 64));
 
         // Преобразуем первые 64 символа (chars_first)
-        __mmask64 digit_mask_first = _mm512_cmpgt_epi8_mask(chars_first, _mm512_set1_epi8('0' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('9' + 1), chars_first);
-        __mmask64 upper_mask_first = _mm512_cmpgt_epi8_mask(chars_first, _mm512_set1_epi8('A' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('F' + 1), chars_first);
-        __mmask64 lower_mask_first = _mm512_cmpgt_epi8_mask(chars_first, _mm512_set1_epi8('a' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('f' + 1), chars_first);
+        __mmask64 digit_mask_first = _mm512_cmpgt_epi8_mask(chars_first, ASCII_TABLE_DIGITS_AFTER) \
+                                   & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_DIGITS_BEFORE);
+        __mmask64 upper_mask_first = _mm512_cmpgt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_AFTER) \
+                                   & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
+        __mmask64 lower_mask_first = _mm512_cmpgt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_SMALL_AFTER) \
+                                   & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
         // Преобразуем вторые 64 символа (chars_second)
-        __mmask64 digit_mask_second = _mm512_cmpgt_epi8_mask(chars_second, _mm512_set1_epi8('0' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('9' + 1), chars_second);
-        __mmask64 upper_mask_second = _mm512_cmpgt_epi8_mask(chars_second, _mm512_set1_epi8('A' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('F' + 1), chars_second);
-        __mmask64 lower_mask_second = _mm512_cmpgt_epi8_mask(chars_second, _mm512_set1_epi8('a' - 1)) & _mm512_cmpgt_epi8_mask(_mm512_set1_epi8('f' + 1), chars_second);
+        __mmask64 digit_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_DIGITS_AFTER) \
+                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_DIGITS_BEFORE);
+        __mmask64 upper_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_CAPITAL_AFTER) \
+                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
+        __mmask64 lower_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_SMALL_AFTER) \
+                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
         __m512i digits_first = _mm512_maskz_sub_epi8(digit_mask_first, chars_first, OFFSET_ASCII_DIGIT);
         __m512i uppers_first = _mm512_maskz_sub_epi8(upper_mask_first, chars_first, OFFSET_ASCII_UPPER);
@@ -77,29 +92,29 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         __m512i uppers_second = _mm512_maskz_sub_epi8(upper_mask_second, chars_second, OFFSET_ASCII_UPPER);
         __m512i lowers_second = _mm512_maskz_sub_epi8(lower_mask_second, chars_second, OFFSET_ASCII_LOWER);
 
-        __m512i values_first = _mm512_or_si512(digits_first, _mm512_or_si512(uppers_first, lowers_first));         // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00 04 01 04 02 04 03 04 04 04 05 04 06 04 07 04 08 04 09 04 0A 04 0B 04 0C 04 0D 04 0E 04 0F 05 00
-        __m512i values_second = _mm512_or_si512(digits_second, _mm512_or_si512(uppers_second, lowers_second));     // 05 01 05 02 05 03 05 04 05 05 05 06 05 07 05 08 05 09 05 0A 05 0B 05 0C 05 0D 05 0E 05 0F 06 00 06 01 06 02 06 03 06 04 06 05 06 06 06 07 06 08 06 09 06 0A 06 0B 06 0C 06 0D 06 0E 06 0F 07 00
+        __m512i values_first = _mm512_or_si512(digits_first, _mm512_or_si512(uppers_first, lowers_first));     // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00 04 01 04 02 04 03 04 04 04 05 04 06 04 07 04 08 04 09 04 0A 04 0B 04 0C 04 0D 04 0E 04 0F 05 00
+        __m512i values_second = _mm512_or_si512(digits_second, _mm512_or_si512(uppers_second, lowers_second)); // 05 01 05 02 05 03 05 04 05 05 05 06 05 07 05 08 05 09 05 0A 05 0B 05 0C 05 0D 05 0E 05 0F 06 00 06 01 06 02 06 03 06 04 06 05 06 06 06 07 06 08 06 09 06 0A 06 0B 06 0C 06 0D 06 0E 06 0F 07 00
 
         // AVX-512: Используем _mm512_shuffle_epi8 для извлечения вторых символов
-        __m512i shifted_high_and_low_to_msb_first = _mm512_slli_epi16(values_first, 4);                            // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00 40 10 40 20 40 30 40 40 40 50 40 60 40 70 40 80 40 90 40 A0 40 B0 40 C0 40 D0 40 E0 40 F0 50 00
-        __m512i shifted_high_and_low_to_msb_second = _mm512_slli_epi16(values_second, 4);                          // 50 10 50 20 50 30 50 40 50 50 50 60 50 70 50 80 50 90 50 A0 50 B0 50 C0 50 D0 50 E0 50 F0 60 00 60 10 60 20 60 30 60 40 60 50 60 60 60 70 60 80 60 90 60 A0 60 B0 60 C0 60 D0 60 E0 60 F0 70 00
+        __m512i shifted_high_and_low_to_msb_first = _mm512_slli_epi16(values_first, 4);                        // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00 40 10 40 20 40 30 40 40 40 50 40 60 40 70 40 80 40 90 40 A0 40 B0 40 C0 40 D0 40 E0 40 F0 50 00
+        __m512i shifted_high_and_low_to_msb_second = _mm512_slli_epi16(values_second, 4);                      // 50 10 50 20 50 30 50 40 50 50 50 60 50 70 50 80 50 90 50 A0 50 B0 50 C0 50 D0 50 E0 50 F0 60 00 60 10 60 20 60 30 60 40 60 50 60 60 60 70 60 80 60 90 60 A0 60 B0 60 C0 60 D0 60 E0 60 F0 70 00
 
-        __m512i low_hex_to_lsb_first = _mm512_shuffle_epi8(values_first, SECOND_SHUFFLE);                          // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
-        __m512i low_hex_to_lsb_second = _mm512_shuffle_epi8(values_second, SECOND_SHUFFLE);                        // 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
+        __m512i low_hex_to_lsb_first = _mm512_shuffle_epi8(values_first, SECOND_SHUFFLE);                      // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
+        __m512i low_hex_to_lsb_second = _mm512_shuffle_epi8(values_second, SECOND_SHUFFLE);                    // 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
 
-        __m512i result_first = _mm512_or_si512(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);           // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00 41 10 42 20 43 30 44 40 45 50 46 60 47 70 48 80 49 90 4A A0 4B B0 4C C0 4D D0 4E E0 4F F0 50 00
-        __m512i result_second = _mm512_or_si512(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);        // 51 10 52 20 53 30 54 40 55 50 56 60 57 70 58 80 59 90 5A A0 5B B0 5C C0 5D D0 5E E0 5F F0 60 00 61 10 62 20 63 30 64 40 65 50 66 60 67 70 68 80 69 90 6A A0 6B B0 6C C0 6D D0 6E E0 6F F0 70 00
+        __m512i result_first = _mm512_or_si512(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);       // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00 41 10 42 20 43 30 44 40 45 50 46 60 47 70 48 80 49 90 4A A0 4B B0 4C C0 4D D0 4E E0 4F F0 50 00
+        __m512i result_second = _mm512_or_si512(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);    // 51 10 52 20 53 30 54 40 55 50 56 60 57 70 58 80 59 90 5A A0 5B B0 5C C0 5D D0 5E E0 5F F0 60 00 61 10 62 20 63 30 64 40 65 50 66 60 67 70 68 80 69 90 6A A0 6B B0 6C C0 6D D0 6E E0 6F F0 70 00
 
         __m512i packed_result = _mm512_packus_epi16(
-            _mm512_and_si512(result_first, _mm512_set1_epi16(0x00FF)),                                             // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00 41 00 42 00 43 00 44 00 45 00 46 00 47 00 48 00 49 00 4A 00 4B 00 4C 00 4D 00 4E 00 4F 00 50 00
-            _mm512_and_si512(result_second, _mm512_set1_epi16(0x00FF))                                             // 51 00 52 00 53 00 54 00 55 00 56 00 57 00 58 00 59 00 5A 00 5B 00 5C 00 5D 00 5E 00 5F 00 60 00 61 00 62 00 63 00 64 00 65 00 66 00 67 00 68 00 69 00 6A 00 6B 00 6C 00 6D 00 6E 00 6F 00 70 00
-        );                                                                                                         // 48 65 6C 6C 6F 20 31 32 51 52 53 54 55 56 57 58 33 34 35 36 37 38 39 30 59 5A 5B 5C 5D 5E 5F 60 41 42 43 44 45 46 47 48 61 62 63 64 65 66 67 68 49 4A 4B 4C 4D 4E 4F 50 69 6A 6B 6C 6D 6E 6F 70
+            _mm512_and_si512(result_first, MASK_SECOND_BYTE_TO_PACK),                                          // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00 41 00 42 00 43 00 44 00 45 00 46 00 47 00 48 00 49 00 4A 00 4B 00 4C 00 4D 00 4E 00 4F 00 50 00
+            _mm512_and_si512(result_second, MASK_SECOND_BYTE_TO_PACK)                                          // 51 00 52 00 53 00 54 00 55 00 56 00 57 00 58 00 59 00 5A 00 5B 00 5C 00 5D 00 5E 00 5F 00 60 00 61 00 62 00 63 00 64 00 65 00 66 00 67 00 68 00 69 00 6A 00 6B 00 6C 00 6D 00 6E 00 6F 00 70 00
+        );                                                                                                     // 48 65 6C 6C 6F 20 31 32 51 52 53 54 55 56 57 58 33 34 35 36 37 38 39 30 59 5A 5B 5C 5D 5E 5F 60 41 42 43 44 45 46 47 48 61 62 63 64 65 66 67 68 49 4A 4B 4C 4D 4E 4F 50 69 6A 6B 6C 6D 6E 6F 70
 
         // Исправляем порядок lane в 512-битном векторе
-        __m512i final_result = _mm512_permutexvar_epi64(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7), packed_result); // 48 65 6C 6C 6F 20 31 32 33 34 35 36 37 38 39 30 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70
+        __m512i final_result = _mm512_permutexvar_epi64(PERMUTE_MASK_ORDER_CORRECTION, packed_result);         // 48 65 6C 6C 6F 20 31 32 33 34 35 36 37 38 39 30 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70
 
         // Сохраняем 64 байта результата
-        _mm512_storeu_si512((__m512i*)(bin + i/2), final_result);
+        _mm512_storeu_si512((__m512i*)(bin + i / 2), final_result);
     }
 
     // Обработка остатка
@@ -115,7 +130,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
                  (second >= 'A' && second <= 'F') ? (second - 'A' + 10) :
                  (second >= 'a' && second <= 'f') ? (second - 'a' + 10) : 0;
 
-        bin[i/2] = (first << 4) | second;
+        bin[i / 2] = (first << 4) | second;
     }
 }
 

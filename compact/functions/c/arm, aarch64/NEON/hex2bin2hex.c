@@ -37,10 +37,17 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         return;
     }
 
-    // Константы для преобразования
-    uint8x16_t offset_digit = vdupq_n_u8('0');
-    uint8x16_t offset_upper = vdupq_n_u8('A' - 10);
-    uint8x16_t offset_lower = vdupq_n_u8('a' - 10);
+    // Общие константы (ASCII)
+    const uint8x16_t OFFSET_ASCII_DIGIT                 = vdupq_n_u8(0x30); // '0'
+    const uint8x16_t OFFSET_ASCII_UPPER                 = vdupq_n_u8(0x37); // 'A' - 10
+    const uint8x16_t OFFSET_ASCII_LOWER                 = vdupq_n_u8(0x57); // 'a' - 10
+
+    const uint8x16_t ASCII_TABLE_DIGITS_START           = vdupq_n_u8(0x30); // '0'
+    const uint8x16_t ASCII_TABLE_DIGITS_END             = vdupq_n_u8(0x39); // '9'
+    const uint8x16_t ASCII_TABLE_ALPHABET_CAPITAL_START = vdupq_n_u8(0x41); // 'A'
+    const uint8x16_t ASCII_TABLE_ALPHABET_CAPITAL_END   = vdupq_n_u8(0x46); // 'F'
+    const uint8x16_t ASCII_TABLE_ALPHABET_SMALL_START   = vdupq_n_u8(0x61); // 'a'
+    const uint8x16_t ASCII_TABLE_ALPHABET_SMALL_END     = vdupq_n_u8(0x66); // 'f'
 
     size_t i = 0;
 
@@ -49,34 +56,45 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         // Загружаем 32 символа с разделением на пары
         uint8x16x2_t chars = vld2q_u8(hex + i);
 
-        // Инициализируем результат нулем
-        uint8x16_t result = vdupq_n_u8(0);
-
         // Первая часть пары (будет сдвинута влево)
-        uint8x16_t first = chars.val[0];
-        uint8x16_t first_is_digit = vandq_u8(vcgeq_u8(first, vdupq_n_u8('0')), vcleq_u8(first, vdupq_n_u8('9')));
-        uint8x16_t first_is_upper = vandq_u8(vcgeq_u8(first, vdupq_n_u8('A')), vcleq_u8(first, vdupq_n_u8('F')));
-        uint8x16_t first_is_lower = vandq_u8(vcgeq_u8(first, vdupq_n_u8('a')), vcleq_u8(first, vdupq_n_u8('f')));
-
-        first = vbslq_u8(first_is_digit, vsubq_u8(first, offset_digit), first);
-        first = vbslq_u8(first_is_upper, vsubq_u8(first, offset_upper), first);
-        first = vbslq_u8(first_is_lower, vsubq_u8(first, offset_lower), first);
+        uint8x16_t first_is_digit = vandq_u8(
+            vcgeq_u8(chars.val[0], ASCII_TABLE_DIGITS_START),
+            vcleq_u8(chars.val[0], ASCII_TABLE_DIGITS_END)
+        );
+        uint8x16_t first_is_upper = vandq_u8(
+            vcgeq_u8(chars.val[0], ASCII_TABLE_ALPHABET_CAPITAL_START),
+            vcleq_u8(chars.val[0], ASCII_TABLE_ALPHABET_CAPITAL_END)
+        );
+        uint8x16_t first_is_lower = vandq_u8(
+            vcgeq_u8(chars.val[0], ASCII_TABLE_ALPHABET_SMALL_START),
+            vcleq_u8(chars.val[0], ASCII_TABLE_ALPHABET_SMALL_END)
+        );
 
         // Вторая часть пары (останется как есть)
-        uint8x16_t second = chars.val[1];
-        uint8x16_t second_is_digit = vandq_u8(vcgeq_u8(second, vdupq_n_u8('0')), vcleq_u8(second, vdupq_n_u8('9')));
-        uint8x16_t second_is_upper = vandq_u8(vcgeq_u8(second, vdupq_n_u8('A')), vcleq_u8(second, vdupq_n_u8('F')));
-        uint8x16_t second_is_lower = vandq_u8(vcgeq_u8(second, vdupq_n_u8('a')), vcleq_u8(second, vdupq_n_u8('f')));
+        uint8x16_t second_is_digit = vandq_u8(
+            vcgeq_u8(chars.val[1], ASCII_TABLE_DIGITS_START),
+            vcleq_u8(chars.val[1], ASCII_TABLE_DIGITS_END)
+        );
+        uint8x16_t second_is_upper = vandq_u8(
+            vcgeq_u8(chars.val[1], ASCII_TABLE_ALPHABET_CAPITAL_START),
+            vcleq_u8(chars.val[1], ASCII_TABLE_ALPHABET_CAPITAL_END)
+        );
+        uint8x16_t second_is_lower = vandq_u8(
+            vcgeq_u8(chars.val[1], ASCII_TABLE_ALPHABET_SMALL_START),
+            vcleq_u8(chars.val[1], ASCII_TABLE_ALPHABET_SMALL_END)
+        );
 
-        second = vbslq_u8(second_is_digit, vsubq_u8(second, offset_digit), second);
-        second = vbslq_u8(second_is_upper, vsubq_u8(second, offset_upper), second);
-        second = vbslq_u8(second_is_lower, vsubq_u8(second, offset_lower), second);
+        uint8x16_t first = vbslq_u8(first_is_digit, vsubq_u8(chars.val[0], OFFSET_ASCII_DIGIT), chars.val[0]);
+        uint8x16_t second = vbslq_u8(second_is_digit, vsubq_u8(chars.val[1], OFFSET_ASCII_DIGIT), chars.val[1]);
 
-        // Объединяем: первая часть сдвигается на 4 бита влево, затем OR со второй
-        result = vorrq_u8(vshlq_n_u8(first, 4), second);
+        first = vbslq_u8(first_is_upper, vsubq_u8(first, OFFSET_ASCII_UPPER), first);
+        first = vbslq_u8(first_is_lower, vsubq_u8(first, OFFSET_ASCII_LOWER), first);
 
-        // Сохраняем 16 байт результата
-        vst1q_u8(bin + i/2, result);
+        second = vbslq_u8(second_is_upper, vsubq_u8(second, OFFSET_ASCII_UPPER), second);
+        second = vbslq_u8(second_is_lower, vsubq_u8(second, OFFSET_ASCII_LOWER), second);
+
+        // Сохраняем 16 байт результата (Объединяем: первая часть сдвигается на 4 бита влево, затем OR со второй)
+        vst1q_u8(bin + i / 2, vorrq_u8(vshlq_n_u8(first, 4), second));
     }
 
     // Обработка остатка
@@ -92,14 +110,17 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
                  (second >= 'A' && second <= 'F') ? (second - 'A' + 10) :
                  (second >= 'a' && second <= 'f') ? (second - 'a' + 10) : 0;
 
-        bin[i/2] = (first << 4) | second;
+        bin[i / 2] = (first << 4) | second;
     }
 }
 
 void bin2hex(const uint8_t *input, char *hex, size_t length) {
     // Таблица для преобразования полубайтов в шестнадцатеричные символы
-    uint8_t hex_chars[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-    uint8x16_t hex_table = vld1q_u8(hex_chars);
+    const uint8_t hex_chars[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    const uint8x16_t hex_table = vld1q_u8(hex_chars);
+
+    const uint8x16_t MASK_LOW_NIBBLE = vdupq_n_u8(0x0F);
 
     size_t i = 0;
 
@@ -109,7 +130,7 @@ void bin2hex(const uint8_t *input, char *hex, size_t length) {
 
         // Разделяем байты на старшие и младшие полубайты
         uint8x16_t high_nibbles = vshrq_n_u8(data, 4); // Сдвиг вправо на 4 бита
-        uint8x16_t low_nibbles = vandq_u8(data, vdupq_n_u8(0x0F)); // Обнуление старших 4 бит
+        uint8x16_t low_nibbles = vandq_u8(data, MASK_LOW_NIBBLE); // Обнуление старших 4 бит
 
         // Сопоставляем полубайты в шестнадцатеричные символы представления ASCII совместимой кодировки
         uint8x16_t hex_high = vqtbl1q_u8(hex_table, high_nibbles);

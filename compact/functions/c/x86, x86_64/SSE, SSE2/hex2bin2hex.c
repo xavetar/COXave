@@ -30,13 +30,6 @@
 #include <stdint.h>
 #include <immintrin.h>
 
-// Проверка поддержки SSSE3 на этапе компиляции
-#ifdef __SSSE3__
-#define HAS_SSSE3 1
-#else
-#define HAS_SSSE3 0
-#endif
-
 void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     // Проверка на четность длины
     if (hex_len % 2 != 0) {
@@ -44,13 +37,25 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         return;
     }
 
-    // Общие константы
-    const __m128i OFFSET_ASCII_DIGIT = _mm_set1_epi8('0');
-    const __m128i OFFSET_ASCII_UPPER = _mm_set1_epi8('A' - 10);
-    const __m128i OFFSET_ASCII_LOWER = _mm_set1_epi8('a' - 10);
+    // Общие константы (ASCII)
+    const __m128i OFFSET_ASCII_DIGIT                  = _mm_set1_epi8(0x30); // '0'
+    const __m128i OFFSET_ASCII_UPPER                  = _mm_set1_epi8(0x37); // 'A' - 10
+    const __m128i OFFSET_ASCII_LOWER                  = _mm_set1_epi8(0x57); // 'a' - 10
+
+    const __m128i ASCII_TABLE_DIGITS_AFTER            = _mm_set1_epi8(0x2F); // '0' - 1
+    const __m128i ASCII_TABLE_DIGITS_BEFORE           = _mm_set1_epi8(0x3A); // '9' + 1
+    const __m128i ASCII_TABLE_ALPHABET_CAPITAL_AFTER  = _mm_set1_epi8(0x40); // 'A' - 1
+    const __m128i ASCII_TABLE_ALPHABET_CAPITAL_BEFORE = _mm_set1_epi8(0x47); // 'F' - 1
+    const __m128i ASCII_TABLE_ALPHABET_SMALL_AFTER    = _mm_set1_epi8(0x60); // 'a' - 1
+    const __m128i ASCII_TABLE_ALPHABET_SMALL_BEFORE   = _mm_set1_epi8(0x67); // 'f' - 1
 
 #if __SSSE3__
     const __m128i SECOND_SHUFFLE = _mm_setr_epi8(1, -1, 3, -1, 5, -1, 7, -1, 9, -1, 11, -1, 13, -1, 15, -1);
+
+    const __m128i MASK_SECOND_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
+#else
+    const __m128i MASK_MSB_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
+    const __m128i MASK_LSB_BYTE_TO_PACK = _mm_set1_epi16(0xFF00);
 #endif
 
     size_t i = 0;
@@ -62,14 +67,32 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         __m128i chars_second = _mm_loadu_si128((__m128i*)(hex + i + 16));
 
         // Преобразуем первые 16 символов (chars_first)
-        __m128i digit_mask_first = _mm_and_si128(_mm_cmpgt_epi8(chars_first, _mm_set1_epi8('0' - 1)), _mm_cmplt_epi8(chars_first, _mm_set1_epi8('9' + 1)));
-        __m128i upper_mask_first = _mm_and_si128(_mm_cmpgt_epi8(chars_first, _mm_set1_epi8('A' - 1)), _mm_cmplt_epi8(chars_first, _mm_set1_epi8('F' + 1)));
-        __m128i lower_mask_first = _mm_and_si128(_mm_cmpgt_epi8(chars_first, _mm_set1_epi8('a' - 1)), _mm_cmplt_epi8(chars_first, _mm_set1_epi8('f' + 1)));
+        __m128i digit_mask_first = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_first,ASCII_TABLE_DIGITS_AFTER),
+            _mm_cmplt_epi8(chars_first, ASCII_TABLE_DIGITS_BEFORE)
+        );
+        __m128i upper_mask_first = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_AFTER),
+            _mm_cmplt_epi8(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE)
+        );
+        __m128i lower_mask_first = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_first, ASCII_TABLE_ALPHABET_SMALL_AFTER),
+            _mm_cmplt_epi8(chars_first, ASCII_TABLE_ALPHABET_SMALL_BEFORE)
+        );
 
         // Преобразуем вторые 16 символов (chars_second)
-        __m128i digit_mask_second = _mm_and_si128(_mm_cmpgt_epi8(chars_second, _mm_set1_epi8('0' - 1)), _mm_cmplt_epi8(chars_second, _mm_set1_epi8('9' + 1)));
-        __m128i upper_mask_second = _mm_and_si128(_mm_cmpgt_epi8(chars_second, _mm_set1_epi8('A' - 1)), _mm_cmplt_epi8(chars_second, _mm_set1_epi8('F' + 1)));
-        __m128i lower_mask_second = _mm_and_si128(_mm_cmpgt_epi8(chars_second, _mm_set1_epi8('a' - 1)), _mm_cmplt_epi8(chars_second, _mm_set1_epi8('f' + 1)));
+        __m128i digit_mask_second = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_second,ASCII_TABLE_DIGITS_AFTER),
+            _mm_cmplt_epi8(chars_second, ASCII_TABLE_DIGITS_BEFORE)
+        );
+        __m128i upper_mask_second = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_second, ASCII_TABLE_ALPHABET_CAPITAL_AFTER),
+            _mm_cmplt_epi8(chars_second, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE)
+        );
+        __m128i lower_mask_second = _mm_and_si128(
+            _mm_cmpgt_epi8(chars_second, ASCII_TABLE_ALPHABET_SMALL_AFTER),
+            _mm_cmplt_epi8(chars_second, ASCII_TABLE_ALPHABET_SMALL_BEFORE)
+        );
 
         __m128i digits_first = _mm_and_si128(digit_mask_first, _mm_sub_epi8(chars_first, OFFSET_ASCII_DIGIT));
         __m128i uppers_first = _mm_and_si128(upper_mask_first, _mm_sub_epi8(chars_first, OFFSET_ASCII_UPPER));
@@ -82,7 +105,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         __m128i values_first = _mm_or_si128(digits_first, _mm_or_si128(uppers_first, lowers_first));               // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02
         __m128i values_second = _mm_or_si128(digits_second, _mm_or_si128(uppers_second, lowers_second));           // 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00
 
-#if HAS_SSSE3
+#if __SSSE3__
         // SSSE3: Используем _mm_shuffle_epi8 для извлечения вторых символов
         __m128i shifted_high_and_low_to_msb_first = _mm_slli_epi16(values_first, 4);                               // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20
         __m128i shifted_high_and_low_to_msb_second = _mm_slli_epi16(values_second, 4);                             // 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00
@@ -94,16 +117,16 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         __m128i result_second = _mm_or_si128(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);           // 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00
 
         __m128i final_result = _mm_packus_epi16(
-            _mm_and_si128(result_first, _mm_set1_epi16(0x00FF)),                                                   // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00
-            _mm_and_si128(result_second, _mm_set1_epi16(0x00FF))                                                   // 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
+            _mm_and_si128(result_first, MASK_SECOND_BYTE_TO_PACK),                                                 // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00
+            _mm_and_si128(result_second, MASK_SECOND_BYTE_TO_PACK)                                                 // 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
         );
 #else
         // SSE2: Извлекаем первые и вторые символы через маски
-        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, _mm_set1_epi16(0x00FF));                      // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
-        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, _mm_set1_epi16(0xFF00));                       // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
+        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, MASK_MSB_BYTE_TO_PACK);                       // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
+        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, MASK_LSB_BYTE_TO_PACK);                        // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
 
-        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, _mm_set1_epi16(0x00FF));                    // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
-        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, _mm_set1_epi16(0xFF00));                     // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
+        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, MASK_MSB_BYTE_TO_PACK);                     // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
+        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, MASK_LSB_BYTE_TO_PACK);                      // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
 
         __m128i low_hex_to_lsb_first = _mm_srli_epi16(low_hex_nibbles_first, 8);                                   // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
         __m128i low_hex_to_lsb_second = _mm_srli_epi16(low_hex_nibbles_second, 8);                                 // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
@@ -115,7 +138,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 #endif
 
         // Сохраняем 16 байт результата
-        _mm_storeu_si128((__m128i*)(bin + i/2), final_result);
+        _mm_storeu_si128((__m128i*)(bin + i / 2), final_result);
     }
 
     // Обработка остатка
@@ -131,7 +154,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
                  (second >= 'A' && second <= 'F') ? (second - 'A' + 10) :
                  (second >= 'a' && second <= 'f') ? (second - 'a' + 10) : 0;
 
-        bin[i/2] = (first << 4) | second;
+        bin[i / 2] = (first << 4) | second;
     }
 }
 

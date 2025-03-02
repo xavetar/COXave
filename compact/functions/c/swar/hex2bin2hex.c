@@ -57,6 +57,19 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         return;
     }
 
+    const uint64_t OFFSET_ASCII_DIGIT                  = 0x3030303030303030ULL; // '0'
+    const uint64_t OFFSET_ASCII_UPPER                  = 0x3737373737373737ULL; // 'A' - 10
+    const uint64_t OFFSET_ASCII_LOWER                  = 0x5757575757575757ULL; // 'a' - 10
+
+    const uint64_t ASCII_TABLE_DIGITS_AFTER            = 0x2F2F2F2F2F2F2F2FULL; // '0' - 1
+    const uint64_t ASCII_TABLE_DIGITS_BEFORE           = 0x3A3A3A3A3A3A3A3AULL; // '9' + 1
+    const uint64_t ASCII_TABLE_ALPHABET_CAPITAL_AFTER  = 0x4040404040404040ULL; // 'A' - 1
+    const uint64_t ASCII_TABLE_ALPHABET_CAPITAL_BEFORE = 0x4747474747474747ULL; // 'F' - 1
+    const uint64_t ASCII_TABLE_ALPHABET_SMALL_AFTER    = 0x6060606060606060ULL; // 'a' - 1
+    const uint64_t ASCII_TABLE_ALPHABET_SMALL_BEFORE   = 0x6767676767676767ULL; // 'f' - 1
+
+    const uint64_t ISOLATION_MASK                      = 0xFFFFFFFFFFFFFFFFULL;
+
     size_t i = 0;
 
     for (; i + 16 <= hex_len; i += 16) {
@@ -69,31 +82,37 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         }
 
         // Определяем диапазоны
-        uint64_t high_digit_mask = bitwise_gt(chars_high, 0x2F2F2F2F2F2F2F2FULL) & bitwise_lt(chars_high, 0x3A3A3A3A3A3A3A3AULL);
-        uint64_t high_upper_mask = bitwise_gt(chars_high, 0x4040404040404040ULL) & bitwise_lt(chars_high, 0x4747474747474747ULL);
-        uint64_t high_lower_mask = bitwise_gt(chars_high, 0x6060606060606060ULL) & bitwise_lt(chars_high, 0x6767676767676767ULL);
+        uint64_t high_digit_mask = bitwise_gt(chars_high, ASCII_TABLE_DIGITS_AFTER) \
+                                 & bitwise_lt(chars_high, ASCII_TABLE_DIGITS_BEFORE);
+        uint64_t high_upper_mask = bitwise_gt(chars_high, ASCII_TABLE_ALPHABET_CAPITAL_AFTER) \
+                                 & bitwise_lt(chars_high, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
+        uint64_t high_lower_mask = bitwise_gt(chars_high, ASCII_TABLE_ALPHABET_SMALL_AFTER) \
+                                 & bitwise_lt(chars_high, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
-        uint64_t low_digit_mask = bitwise_gt(chars_low, 0x2F2F2F2F2F2F2F2FULL) & bitwise_lt(chars_low, 0x3A3A3A3A3A3A3A3AULL);
-        uint64_t low_upper_mask = bitwise_gt(chars_low, 0x4040404040404040ULL) & bitwise_lt(chars_low, 0x4747474747474747ULL);
-        uint64_t low_lower_mask = bitwise_gt(chars_low, 0x6060606060606060ULL) & bitwise_lt(chars_low, 0x6767676767676767ULL);
+        uint64_t low_digit_mask = bitwise_gt(chars_low, ASCII_TABLE_DIGITS_AFTER) \
+                                & bitwise_lt(chars_low, ASCII_TABLE_DIGITS_BEFORE);
+        uint64_t low_upper_mask = bitwise_gt(chars_low, ASCII_TABLE_ALPHABET_CAPITAL_AFTER) \
+                                & bitwise_lt(chars_low, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
+        uint64_t low_lower_mask = bitwise_gt(chars_low, ASCII_TABLE_ALPHABET_SMALL_AFTER) \
+                                & bitwise_lt(chars_low, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
         // Изолируем значения, подгоняя меньшие к 0xFF перед вычитанием
-        uint64_t high_digits_raw = chars_high | (~high_digit_mask & 0xFFFFFFFFFFFFFFFFULL);
-        uint64_t high_uppers_raw = chars_high | (~high_upper_mask & 0xFFFFFFFFFFFFFFFFULL);
-        uint64_t high_lowers_raw = chars_high | (~high_lower_mask & 0xFFFFFFFFFFFFFFFFULL);
+        uint64_t high_digits_raw = chars_high | (~high_digit_mask & ISOLATION_MASK);
+        uint64_t high_uppers_raw = chars_high | (~high_upper_mask & ISOLATION_MASK);
+        uint64_t high_lowers_raw = chars_high | (~high_lower_mask & ISOLATION_MASK);
 
-        uint64_t low_digits_raw = chars_low | (~low_digit_mask & 0xFFFFFFFFFFFFFFFFULL);
-        uint64_t low_uppers_raw = chars_low | (~low_upper_mask & 0xFFFFFFFFFFFFFFFFULL);
-        uint64_t low_lowers_raw = chars_low | (~low_lower_mask & 0xFFFFFFFFFFFFFFFFULL);
+        uint64_t low_digits_raw = chars_low | (~low_digit_mask & ISOLATION_MASK);
+        uint64_t low_uppers_raw = chars_low | (~low_upper_mask & ISOLATION_MASK);
+        uint64_t low_lowers_raw = chars_low | (~low_lower_mask & ISOLATION_MASK);
 
         // Преобразуем значения
-        uint64_t high_digits = (high_digits_raw - 0x3030303030303030ULL) & high_digit_mask;
-        uint64_t high_uppers = (high_uppers_raw - 0x3737373737373737ULL) & high_upper_mask;
-        uint64_t high_lowers = (high_lowers_raw - 0x5757575757575757ULL) & high_lower_mask;
+        uint64_t high_digits = (high_digits_raw - OFFSET_ASCII_DIGIT) & high_digit_mask;
+        uint64_t high_uppers = (high_uppers_raw - OFFSET_ASCII_UPPER) & high_upper_mask;
+        uint64_t high_lowers = (high_lowers_raw - OFFSET_ASCII_LOWER) & high_lower_mask;
 
-        uint64_t low_digits = (low_digits_raw - 0x3030303030303030ULL) & low_digit_mask;
-        uint64_t low_uppers = (low_uppers_raw - 0x3737373737373737ULL) & low_upper_mask;
-        uint64_t low_lowers = (low_lowers_raw - 0x5757575757575757ULL) & low_lower_mask;
+        uint64_t low_digits = (low_digits_raw - OFFSET_ASCII_DIGIT) & low_digit_mask;
+        uint64_t low_uppers = (low_uppers_raw - OFFSET_ASCII_UPPER) & low_upper_mask;
+        uint64_t low_lowers = (low_lowers_raw - OFFSET_ASCII_LOWER) & low_lower_mask;
 
         // Объединяем значения
         uint64_t high_values = high_digits | high_uppers | high_lowers;
@@ -125,6 +144,15 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 }
 
 void bin2hex(const uint8_t* input, char* hex, size_t length) {
+
+    const uint64_t OFFSET_ASCII_DIGIT         = 0x3030303030303030ULL; // '0'
+    const uint64_t OFFSET_ASCII_UPPER         = 0x3737373737373737ULL; // 'A' - 10
+
+    const uint64_t THRESHOLD_LAST_ASCII_DIGIT = 0x0909090909090909ULL;
+
+    const uint64_t MASK_HIGH_NIBBLE           = 0xF0F0F0F0F0F0F0F0ULL;
+    const uint64_t MASK_LOW_NIBBLE            = 0x0F0F0F0F0F0F0F0FULL;
+
     size_t i = 0;
 
     // Обработка по 8 байт (16 символов результата) за раз
@@ -137,18 +165,18 @@ void bin2hex(const uint8_t* input, char* hex, size_t length) {
         }
 
         // Разделяем байты на старшие и младшие полубайты
-        uint64_t high_nibbles = (data & 0xF0F0F0F0F0F0F0F0ULL) >> 4;
-        uint64_t low_nibbles = data & 0x0F0F0F0F0F0F0F0FULL;
+        uint64_t high_nibbles = (data & MASK_HIGH_NIBBLE) >> 4;
+        uint64_t low_nibbles = data & MASK_LOW_NIBBLE;
 
         // Определяем, какие nibbles больше 9 (для A-F)
-        uint64_t high_is_alpha = bitwise_gt(high_nibbles, 0x0909090909090909ULL);
-        uint64_t low_is_alpha = bitwise_gt(low_nibbles, 0x0909090909090909ULL);
+        uint64_t high_is_alpha = bitwise_gt(high_nibbles, THRESHOLD_LAST_ASCII_DIGIT);
+        uint64_t low_is_alpha = bitwise_gt(low_nibbles, THRESHOLD_LAST_ASCII_DIGIT);
 
         // Вычисляем значения для 0-9 и 10-15 отдельно
-        uint64_t high_ascii_digit = high_nibbles + 0x3030303030303030ULL; // "00000000" + nibble
-        uint64_t high_ascii_alpha = high_nibbles + 0x3737373737373737ULL; // "77777777" + nibble (A=10 → 0x41)
-        uint64_t low_ascii_digit = low_nibbles + 0x3030303030303030ULL;
-        uint64_t low_ascii_alpha = low_nibbles + 0x3737373737373737ULL;
+        uint64_t high_ascii_digit = high_nibbles + OFFSET_ASCII_DIGIT; // "00000000" + nibble
+        uint64_t high_ascii_alpha = high_nibbles + OFFSET_ASCII_UPPER; // "77777777" + nibble (A=10 → 0x41)
+        uint64_t low_ascii_digit = low_nibbles + OFFSET_ASCII_DIGIT;
+        uint64_t low_ascii_alpha = low_nibbles + OFFSET_ASCII_UPPER;
 
         // Обнуляем октеты, не соответствующие маскам
         high_ascii_digit &= ~high_is_alpha;
