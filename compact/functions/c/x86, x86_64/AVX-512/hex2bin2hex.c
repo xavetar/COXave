@@ -78,11 +78,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
         // Преобразуем вторые 64 символа (chars_second)
         __mmask64 digit_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_DIGITS_AFTER) \
-                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_DIGITS_BEFORE);
+                                    & _mm512_cmplt_epi8_mask(chars_second, ASCII_TABLE_DIGITS_BEFORE);
         __mmask64 upper_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_CAPITAL_AFTER) \
-                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
+                                    & _mm512_cmplt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_CAPITAL_BEFORE);
         __mmask64 lower_mask_second = _mm512_cmpgt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_SMALL_AFTER) \
-                                    & _mm512_cmplt_epi8_mask(chars_first, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
+                                    & _mm512_cmplt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
         __m512i digits_first = _mm512_maskz_sub_epi8(digit_mask_first, chars_first, OFFSET_ASCII_DIGIT);
         __m512i uppers_first = _mm512_maskz_sub_epi8(upper_mask_first, chars_first, OFFSET_ASCII_UPPER);
