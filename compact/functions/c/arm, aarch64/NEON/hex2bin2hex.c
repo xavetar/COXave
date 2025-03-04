@@ -28,7 +28,17 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <arm_neon.h>
+
+// Определяем структуру с выравниванием на 16 байт
+struct HexChars {
+    uint8_t chars[16];
+} __attribute__((aligned(16))); // Выравниваем структуру на 16 байт
+
+// Таблицы для преобразования полубайтов в шестнадцатеричные символы
+const struct HexChars ASCII_HEX_CHARS_UPPER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'} };
+const struct HexChars ASCII_HEX_CHARS_LOWER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'} };
 
 void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     // Проверка на четность длины
@@ -39,8 +49,8 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
     // Общие константы (ASCII)
     const uint8x16_t OFFSET_ASCII_DIGIT                 = vdupq_n_u8(0x30); // '0'
-    const uint8x16_t OFFSET_ASCII_UPPER                 = vdupq_n_u8(0x37); // 'A' - 10
-    const uint8x16_t OFFSET_ASCII_LOWER                 = vdupq_n_u8(0x57); // 'a' - 10
+    const uint8x16_t OFFSET_ASCII_ALPHABET_UPPER        = vdupq_n_u8(0x37); // 'A' - 10
+    const uint8x16_t OFFSET_ASCII_ALPHABET_LOWER        = vdupq_n_u8(0x57); // 'a' - 10
 
     const uint8x16_t ASCII_TABLE_DIGITS_START           = vdupq_n_u8(0x30); // '0'
     const uint8x16_t ASCII_TABLE_DIGITS_END             = vdupq_n_u8(0x39); // '9'
@@ -87,11 +97,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         uint8x16_t first = vbslq_u8(first_is_digit, vsubq_u8(chars.val[0], OFFSET_ASCII_DIGIT), chars.val[0]);
         uint8x16_t second = vbslq_u8(second_is_digit, vsubq_u8(chars.val[1], OFFSET_ASCII_DIGIT), chars.val[1]);
 
-        first = vbslq_u8(first_is_upper, vsubq_u8(first, OFFSET_ASCII_UPPER), first);
-        first = vbslq_u8(first_is_lower, vsubq_u8(first, OFFSET_ASCII_LOWER), first);
+        first = vbslq_u8(first_is_upper, vsubq_u8(first, OFFSET_ASCII_ALPHABET_UPPER), first);
+        first = vbslq_u8(first_is_lower, vsubq_u8(first, OFFSET_ASCII_ALPHABET_LOWER), first);
 
-        second = vbslq_u8(second_is_upper, vsubq_u8(second, OFFSET_ASCII_UPPER), second);
-        second = vbslq_u8(second_is_lower, vsubq_u8(second, OFFSET_ASCII_LOWER), second);
+        second = vbslq_u8(second_is_upper, vsubq_u8(second, OFFSET_ASCII_ALPHABET_UPPER), second);
+        second = vbslq_u8(second_is_lower, vsubq_u8(second, OFFSET_ASCII_ALPHABET_LOWER), second);
 
         // Сохраняем 16 байт результата (Объединяем: первая часть сдвигается на 4 бита влево, затем OR со второй)
         vst1q_u8(bin + i / 2, vorrq_u8(vshlq_n_u8(first, 4), second));
@@ -114,11 +124,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     }
 }
 
-void bin2hex(const uint8_t *input, char *hex, size_t length) {
-    // Таблица для преобразования полубайтов в шестнадцатеричные символы
-    const uint8_t hex_chars[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+void bin2hex(const uint8_t *input, char *hex, bool _case, size_t length) {
+    // Определяем таблицу для преобразования полубайтов в шестнадцатеричные символы
+    const struct HexChars* CHARS = _case ? &ASCII_HEX_CHARS_LOWER : &ASCII_HEX_CHARS_UPPER;
 
-    const uint8x16_t hex_table = vld1q_u8(hex_chars);
+    const uint8x16_t HEX_TABLE = vld1q_u8((uint8_t*) CHARS);
 
     const uint8x16_t MASK_LOW_NIBBLE = vdupq_n_u8(0x0F);
 
@@ -133,8 +143,8 @@ void bin2hex(const uint8_t *input, char *hex, size_t length) {
         uint8x16_t low_nibbles = vandq_u8(data, MASK_LOW_NIBBLE); // Обнуление старших 4 бит
 
         // Сопоставляем полубайты в шестнадцатеричные символы представления ASCII совместимой кодировки
-        uint8x16_t hex_high = vqtbl1q_u8(hex_table, high_nibbles);
-        uint8x16_t hex_low = vqtbl1q_u8(hex_table, low_nibbles);
+        uint8x16_t hex_high = vqtbl1q_u8(HEX_TABLE, high_nibbles);
+        uint8x16_t hex_low = vqtbl1q_u8(HEX_TABLE, low_nibbles);
 
         // Сохраняем результат без чередования
         uint8x16x2_t non_interleaved = {hex_high, hex_low};
@@ -145,8 +155,8 @@ void bin2hex(const uint8_t *input, char *hex, size_t length) {
 
     // Обрабатываем не кратную часть
     for (; i + 1 <= length; i += 1) {
-        hex[2 * i] = "0123456789ABCDEF"[(input[i] >> 4) & 0x0F];
-        hex[2 * i + 1] = "0123456789ABCDEF"[input[i] & 0x0F];
+        hex[2 * i] = (*CHARS).chars[(input[i] >> 4) & 0x0F];
+        hex[2 * i + 1] = (*CHARS).chars[input[i] & 0x0F];
     }
 }
 
@@ -155,7 +165,7 @@ void test_bin2hex() {
 
     uint8_t input[17] = {0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x48};
 
-    bin2hex(input, hex_result, sizeof(input));
+    bin2hex(input, hex_result, false, sizeof(input));
 
     printf("Input Binary (bin2hex): ");
     for (int i = 0; i < sizeof(input); i++) {
@@ -172,7 +182,7 @@ void test_hex2bin2hex() {
     char hex_result[35] = {0};
 
     hex2bin((uint8_t*) input, binary, sizeof(input) - 1);
-    bin2hex(binary, hex_result, sizeof(binary));
+    bin2hex(binary, hex_result, false, sizeof(binary));
 
     printf("Original Input (hex2bin2hex): %s\n", input);
     printf("Result Binary (hex2bin2hex): ");

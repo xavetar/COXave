@@ -28,7 +28,23 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <immintrin.h>
+
+// Определяем структуру с выравниванием на 64 байт
+struct HexChars {
+    uint8_t chars[64];
+} __attribute__((aligned(64))); // Выравниваем структуру на 64 байт
+
+// Таблицы для преобразования полубайтов в шестнадцатеричные символы
+const struct HexChars ASCII_HEX_CHARS_UPPER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'} };
+const struct HexChars ASCII_HEX_CHARS_LOWER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'} };
 
 void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     // Проверка на четность длины
@@ -39,8 +55,8 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
     // Общие константы (ASCII)
     const __m512i OFFSET_ASCII_DIGIT                  = _mm512_set1_epi8(0x30); // '0'
-    const __m512i OFFSET_ASCII_UPPER                  = _mm512_set1_epi8(0x37); // 'A' - 10
-    const __m512i OFFSET_ASCII_LOWER                  = _mm512_set1_epi8(0x57); // 'a' - 10
+    const __m512i OFFSET_ASCII_ALPHABET_UPPER         = _mm512_set1_epi8(0x37); // 'A' - 10
+    const __m512i OFFSET_ASCII_ALPHABET_LOWER         = _mm512_set1_epi8(0x57); // 'a' - 10
 
     const __m512i ASCII_TABLE_DIGITS_AFTER            = _mm512_set1_epi8(0x2F); // '0' - 1
     const __m512i ASCII_TABLE_DIGITS_BEFORE           = _mm512_set1_epi8(0x3A); // '9' + 1
@@ -85,12 +101,12 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
                                     & _mm512_cmplt_epi8_mask(chars_second, ASCII_TABLE_ALPHABET_SMALL_BEFORE);
 
         __m512i digits_first = _mm512_maskz_sub_epi8(digit_mask_first, chars_first, OFFSET_ASCII_DIGIT);
-        __m512i uppers_first = _mm512_maskz_sub_epi8(upper_mask_first, chars_first, OFFSET_ASCII_UPPER);
-        __m512i lowers_first = _mm512_maskz_sub_epi8(lower_mask_first, chars_first, OFFSET_ASCII_LOWER);
+        __m512i uppers_first = _mm512_maskz_sub_epi8(upper_mask_first, chars_first, OFFSET_ASCII_ALPHABET_UPPER);
+        __m512i lowers_first = _mm512_maskz_sub_epi8(lower_mask_first, chars_first, OFFSET_ASCII_ALPHABET_LOWER);
 
         __m512i digits_second = _mm512_maskz_sub_epi8(digit_mask_second, chars_second, OFFSET_ASCII_DIGIT);
-        __m512i uppers_second = _mm512_maskz_sub_epi8(upper_mask_second, chars_second, OFFSET_ASCII_UPPER);
-        __m512i lowers_second = _mm512_maskz_sub_epi8(lower_mask_second, chars_second, OFFSET_ASCII_LOWER);
+        __m512i uppers_second = _mm512_maskz_sub_epi8(upper_mask_second, chars_second, OFFSET_ASCII_ALPHABET_UPPER);
+        __m512i lowers_second = _mm512_maskz_sub_epi8(lower_mask_second, chars_second, OFFSET_ASCII_ALPHABET_LOWER);
 
         __m512i values_first = _mm512_or_si512(digits_first, _mm512_or_si512(uppers_first, lowers_first));     // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00 04 01 04 02 04 03 04 04 04 05 04 06 04 07 04 08 04 09 04 0A 04 0B 04 0C 04 0D 04 0E 04 0F 05 00
         __m512i values_second = _mm512_or_si512(digits_second, _mm512_or_si512(uppers_second, lowers_second)); // 05 01 05 02 05 03 05 04 05 05 05 06 05 07 05 08 05 09 05 0A 05 0B 05 0C 05 0D 05 0E 05 0F 06 00 06 01 06 02 06 03 06 04 06 05 06 06 06 07 06 08 06 09 06 0A 06 0B 06 0C 06 0D 06 0E 06 0F 07 00
@@ -134,13 +150,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     }
 }
 
-void bin2hex(const uint8_t* input, char* hex, size_t length) {
-    const __m512i hex_table = _mm512_set_epi8(
-        'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0',
-        'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0',
-        'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0',
-        'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'
-    );
+void bin2hex(const uint8_t* input, char* hex, bool _case, size_t length) {
+    // Определяем таблицу для преобразования полубайтов в шестнадцатеричные символы
+    const struct HexChars* CHARS = _case ? &ASCII_HEX_CHARS_LOWER : &ASCII_HEX_CHARS_UPPER;
+
+    const __m512i HEX_TABLE = _mm512_load_si512((__m512i*) CHARS);
 
     const __m512i MASK_LOW_NIBBLE = _mm512_set1_epi8(0x0F);
 
@@ -158,8 +172,8 @@ void bin2hex(const uint8_t* input, char* hex, size_t length) {
         __m512i low_nibbles = _mm512_and_si512(data, MASK_LOW_NIBBLE);
 
         // Сопоставляем полубайты в шестнадцатеричные символы представления ASCII совместимой кодировки
-        __m512i hex_high = _mm512_shuffle_epi8(hex_table, high_nibbles);
-        __m512i hex_low = _mm512_shuffle_epi8(hex_table, low_nibbles);
+        __m512i hex_high = _mm512_shuffle_epi8(HEX_TABLE, high_nibbles);
+        __m512i hex_low = _mm512_shuffle_epi8(HEX_TABLE, low_nibbles);
 
         // Чередуем старшие и младшие полубайты
         __m512i hex_packed_even = _mm512_unpacklo_epi8(hex_high, hex_low);
@@ -176,8 +190,8 @@ void bin2hex(const uint8_t* input, char* hex, size_t length) {
 
     // Обрабатываем не кратную часть
     for (; i + 1 <= length; i += 1) {
-        hex[2 * i] = "0123456789ABCDEF"[(input[i] >> 4) & 0x0F];
-        hex[2 * i + 1] = "0123456789ABCDEF"[input[i] & 0x0F];
+        hex[2 * i] = (*CHARS).chars[(input[i] >> 4) & 0x0F];
+        hex[2 * i + 1] = (*CHARS).chars[input[i] & 0x0F];
     }
 }
 
@@ -190,7 +204,7 @@ void test_bin2hex() {
                          0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70,
                          0x48};
 
-    bin2hex(input, hex_result, sizeof(input));
+    bin2hex(input, hex_result, false, sizeof(input));
 
     printf("Input Binary (bin2hex): ");
     for (int i = 0; i < sizeof(input); i++) {
@@ -213,7 +227,7 @@ void test_hex2bin2hex() {
     char hex_result[131] = {0};
 
     hex2bin((uint8_t*) input, binary, sizeof(input) - 1);
-    bin2hex(binary, hex_result, sizeof(binary));
+    bin2hex(binary, hex_result, false, sizeof(binary));
 
     printf("Original Input (hex2bin2hex): %s\n", input);
     printf("Result Binary (hex2bin2hex): ");

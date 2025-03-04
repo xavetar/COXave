@@ -28,7 +28,19 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <immintrin.h>
+
+// Определяем структуру с выравниванием на 32 байт
+struct HexChars {
+    uint8_t chars[32];
+} __attribute__((aligned(32))); // Выравниваем структуру на 32 байт
+
+// Таблицы для преобразования полубайтов в шестнадцатеричные символы
+const struct HexChars ASCII_HEX_CHARS_UPPER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'} };
+const struct HexChars ASCII_HEX_CHARS_LOWER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+                                                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'} };
 
 void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     // Проверка на четность длины
@@ -39,8 +51,8 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
    // Общие константы (ASCII)
     const __m256i OFFSET_ASCII_DIGIT                  = _mm256_set1_epi8(0x30); // '0'
-    const __m256i OFFSET_ASCII_UPPER                  = _mm256_set1_epi8(0x37); // 'A' - 10
-    const __m256i OFFSET_ASCII_LOWER                  = _mm256_set1_epi8(0x57); // 'a' - 10
+    const __m256i OFFSET_ASCII_ALPHABET_UPPER         = _mm256_set1_epi8(0x37); // 'A' - 10
+    const __m256i OFFSET_ASCII_ALPHABET_LOWER         = _mm256_set1_epi8(0x57); // 'a' - 10
 
     const __m256i ASCII_TABLE_DIGITS_AFTER            = _mm256_set1_epi8(0x2F); // '0' - 1
     const __m256i ASCII_TABLE_DIGITS_BEFORE           = _mm256_set1_epi8(0x3A); // '9' + 1
@@ -95,33 +107,33 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         );
 
         __m256i digits_first = _mm256_and_si256(digit_mask_first, _mm256_sub_epi8(chars_first, OFFSET_ASCII_DIGIT));
-        __m256i uppers_first = _mm256_and_si256(upper_mask_first, _mm256_sub_epi8(chars_first, OFFSET_ASCII_UPPER));
-        __m256i lowers_first = _mm256_and_si256(lower_mask_first, _mm256_sub_epi8(chars_first, OFFSET_ASCII_LOWER));
+        __m256i uppers_first = _mm256_and_si256(upper_mask_first, _mm256_sub_epi8(chars_first, OFFSET_ASCII_ALPHABET_UPPER));
+        __m256i lowers_first = _mm256_and_si256(lower_mask_first, _mm256_sub_epi8(chars_first, OFFSET_ASCII_ALPHABET_LOWER));
 
         __m256i digits_second = _mm256_and_si256(digit_mask_second, _mm256_sub_epi8(chars_second, OFFSET_ASCII_DIGIT));
-        __m256i uppers_second = _mm256_and_si256(upper_mask_second, _mm256_sub_epi8(chars_second, OFFSET_ASCII_UPPER));
-        __m256i lowers_second = _mm256_and_si256(lower_mask_second, _mm256_sub_epi8(chars_second, OFFSET_ASCII_LOWER));
+        __m256i uppers_second = _mm256_and_si256(upper_mask_second, _mm256_sub_epi8(chars_second, OFFSET_ASCII_ALPHABET_UPPER));
+        __m256i lowers_second = _mm256_and_si256(lower_mask_second, _mm256_sub_epi8(chars_second, OFFSET_ASCII_ALPHABET_LOWER));
 
-        __m256i values_first = _mm256_or_si256(digits_first, _mm256_or_si256(uppers_first, lowers_first));              // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00
-        __m256i values_second = _mm256_or_si256(digits_second, _mm256_or_si256(uppers_second, lowers_second));          // 04 01 04 02 04 03 04 04 04 05 04 06 04 07 04 08 04 09 04 0A 04 0B 04 0C 04 0D 04 0E 04 0F 05 00
+        __m256i values_first = _mm256_or_si256(digits_first, _mm256_or_si256(uppers_first, lowers_first));     // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00
+        __m256i values_second = _mm256_or_si256(digits_second, _mm256_or_si256(uppers_second, lowers_second)); // 04 01 04 02 04 03 04 04 04 05 04 06 04 07 04 08 04 09 04 0A 04 0B 04 0C 04 0D 04 0E 04 0F 05 00
 
         // AVX2: Используем _mm256_shuffle_epi8 для извлечения вторых символов
-        __m256i shifted_high_and_low_to_msb_first = _mm256_slli_epi16(values_first, 4);                                 // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00
-        __m256i shifted_high_and_low_to_msb_second = _mm256_slli_epi16(values_second, 4);                               // 40 10 40 20 40 30 40 40 40 50 40 60 40 70 40 80 40 90 40 A0 40 B0 40 C0 40 D0 40 E0 40 F0 50 00
+        __m256i shifted_high_and_low_to_msb_first = _mm256_slli_epi16(values_first, 4);                        // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00
+        __m256i shifted_high_and_low_to_msb_second = _mm256_slli_epi16(values_second, 4);                      // 40 10 40 20 40 30 40 40 40 50 40 60 40 70 40 80 40 90 40 A0 40 B0 40 C0 40 D0 40 E0 40 F0 50 00
 
-        __m256i low_hex_to_lsb_first = _mm256_shuffle_epi8(values_first, SECOND_SHUFFLE);                               // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
-        __m256i low_hex_to_lsb_second = _mm256_shuffle_epi8(values_second, SECOND_SHUFFLE);                             // 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
+        __m256i low_hex_to_lsb_first = _mm256_shuffle_epi8(values_first, SECOND_SHUFFLE);                      // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
+        __m256i low_hex_to_lsb_second = _mm256_shuffle_epi8(values_second, SECOND_SHUFFLE);                    // 01 00 02 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 0A 00 0B 00 0C 00 0D 00 0E 00 0F 00 00 00
 
-        __m256i result_first = _mm256_or_si256(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);                // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00
-        __m256i result_second = _mm256_or_si256(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);             // 41 10 42 20 43 30 44 40 45 50 46 60 47 70 48 80 49 90 4A A0 4B B0 4C C0 4D D0 4E E0 4F F0 50 00
+        __m256i result_first = _mm256_or_si256(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);       // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00
+        __m256i result_second = _mm256_or_si256(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);    // 41 10 42 20 43 30 44 40 45 50 46 60 47 70 48 80 49 90 4A A0 4B B0 4C C0 4D D0 4E E0 4F F0 50 00
 
         __m256i packed_result = _mm256_packus_epi16(
-            _mm256_and_si256(result_first, MASK_SECOND_BYTE_TO_PACK),                                                   // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
-            _mm256_and_si256(result_second, MASK_SECOND_BYTE_TO_PACK)                                                   // 41 00 42 00 43 00 44 00 45 00 46 00 47 00 48 00 49 00 4A 00 4B 00 4C 00 4D 00 4E 00 4F 00 50 00
-        );                                                                                                              // 48 65 6C 6C 6F 20 31 32 41 42 43 44 45 46 47 48 33 34 35 36 37 38 39 30 49 4A 4B 4C 4D 4E 4F 50
+            _mm256_and_si256(result_first, MASK_SECOND_BYTE_TO_PACK),                                          // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
+            _mm256_and_si256(result_second, MASK_SECOND_BYTE_TO_PACK)                                          // 41 00 42 00 43 00 44 00 45 00 46 00 47 00 48 00 49 00 4A 00 4B 00 4C 00 4D 00 4E 00 4F 00 50 00
+        );                                                                                                     // 48 65 6C 6C 6F 20 31 32 41 42 43 44 45 46 47 48 33 34 35 36 37 38 39 30 49 4A 4B 4C 4D 4E 4F 50
 
         // Исправляем порядок lane в 256-битном векторе
-        __m256i final_result = _mm256_permute4x64_epi64(packed_result, PERMUTE_MASK_ORDER_CORRECTION);                  // 48 65 6C 6C 6F 20 31 32 33 34 35 36 37 38 39 30 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50
+        __m256i final_result = _mm256_permute4x64_epi64(packed_result, PERMUTE_MASK_ORDER_CORRECTION);         // 48 65 6C 6C 6F 20 31 32 33 34 35 36 37 38 39 30 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50
 
         // Сохраняем 32 байта результата
         _mm256_storeu_si256((__m256i*)(bin + i / 2), final_result);
@@ -144,12 +156,11 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
     }
 }
 
-void bin2hex(const uint8_t* input, char* hex, size_t length) {
-    // Таблица для преобразования полубайтов в шестнадцатеричные символы
-    const __m256i HEX_TABLE = _mm256_setr_epi8(
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    );
+void bin2hex(const uint8_t* input, char* hex, bool _case, size_t length) {
+    // Определяем таблицу для преобразования полубайтов в шестнадцатеричные символы
+    const struct HexChars* CHARS = _case ? &ASCII_HEX_CHARS_LOWER : &ASCII_HEX_CHARS_UPPER;
+
+    const __m256i HEX_TABLE = _mm256_load_si256((__m256i*) CHARS);
 
     const __m256i MASK_LOW_NIBBLE = _mm256_set1_epi8(0x0F);
 
@@ -183,8 +194,8 @@ void bin2hex(const uint8_t* input, char* hex, size_t length) {
 
     // Обрабатываем не кратную часть
     for (; i + 1 <= length; i += 1) {
-        hex[2 * i] = "0123456789ABCDEF"[(input[i] >> 4) & 0x0F];
-        hex[2 * i + 1] = "0123456789ABCDEF"[input[i] & 0x0F];
+        hex[2 * i] = (*CHARS).chars[(input[i] >> 4) & 0x0F];
+        hex[2 * i + 1] = (*CHARS).chars[input[i] & 0x0F];
     }
 }
 
@@ -195,7 +206,7 @@ void test_bin2hex() {
                          0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
                          0x48};
 
-    bin2hex(input, hex_result, sizeof(input));
+    bin2hex(input, hex_result, false, sizeof(input));
 
     printf("Input Binary (bin2hex): ");
     for (int i = 0; i < sizeof(input); i++) {
@@ -214,7 +225,7 @@ void test_hex2bin2hex() {
     char hex_result[67] = {0};
 
     hex2bin((uint8_t*) input, binary, sizeof(input) - 1);
-    bin2hex(binary, hex_result, sizeof(binary));
+    bin2hex(binary, hex_result, false, sizeof(binary));
 
     printf("Original Input (hex2bin2hex): %s\n", input);
     printf("Result Binary (hex2bin2hex): ");
