@@ -87,6 +87,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         uint64_t chars_high = 0;
         uint64_t chars_low = 0;
 
+        // Выравнивание значительно увеличило бы скорость обработки (вариант для самого простого случая)
         for (int j = 0; j < 8; j++) {
             chars_high |= (uint64_t) hex[i + j * 2] << (j * 8);
             chars_low |= (uint64_t) hex[i + j * 2 + 1] << (j * 8);
@@ -130,6 +131,7 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         uint64_t low_values = low_digits | low_uppers | low_lowers;
 
         // Сохраняем результат побайтово
+        // Выравнивание значительно увеличило бы скорость обработки (вариант для самого простого случая)
         for (int j = 0; j < 8; j++) {
             uint8_t high = (high_values >> (j * 8)) & 0x0F;
             uint8_t low = (low_values >> (j * 8)) & 0x0F;
