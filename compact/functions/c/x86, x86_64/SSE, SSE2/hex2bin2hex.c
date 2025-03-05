@@ -64,7 +64,9 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 
     const __m128i MASK_SECOND_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
 #else
+#if ALTERNATIVE
     const __m128i MASK_FIRST_BYTE_TO_PACK = _mm_set1_epi16(0xFF00);
+#endif
     const __m128i MASK_SECOND_BYTE_TO_PACK = _mm_set1_epi16(0x00FF);
 #endif
 
@@ -112,41 +114,55 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
         __m128i uppers_second = _mm_and_si128(upper_mask_second, _mm_sub_epi8(chars_second, OFFSET_ASCII_ALPHABET_UPPER));
         __m128i lowers_second = _mm_and_si128(lower_mask_second, _mm_sub_epi8(chars_second, OFFSET_ASCII_ALPHABET_LOWER));
 
-        __m128i values_first = _mm_or_si128(digits_first, _mm_or_si128(uppers_first, lowers_first));          // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02
-        __m128i values_second = _mm_or_si128(digits_second, _mm_or_si128(uppers_second, lowers_second));      // 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00
+        __m128i values_first = _mm_or_si128(digits_first, _mm_or_si128(uppers_first, lowers_first));                       // 04 08 06 05 06 0C 06 0C 06 0F 02 00 03 01 03 02
+        __m128i values_second = _mm_or_si128(digits_second, _mm_or_si128(uppers_second, lowers_second));                   // 03 03 03 04 03 05 03 06 03 07 03 08 03 09 03 00
 
 #if __SSSE3__
         // SSSE3: Используем _mm_shuffle_epi8 для извлечения вторых символов
-        __m128i shifted_high_and_low_to_msb_first = _mm_slli_epi16(values_first, 4);                          // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20
-        __m128i shifted_high_and_low_to_msb_second = _mm_slli_epi16(values_second, 4);                        // 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00
+        __m128i shifted_high_and_low_to_msb_first = _mm_slli_epi16(values_first, 4);                                       // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20
+        __m128i shifted_high_and_low_to_msb_second = _mm_slli_epi16(values_second, 4);                                     // 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00
 
-        __m128i low_hex_to_lsb_first = _mm_shuffle_epi8(values_first, SECOND_SHUFFLE);                        // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
-        __m128i low_hex_to_lsb_second = _mm_shuffle_epi8(values_second, SECOND_SHUFFLE);                      // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
+        __m128i low_hex_to_lsb_first = _mm_shuffle_epi8(values_first, SECOND_SHUFFLE);                                     // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
+        __m128i low_hex_to_lsb_second = _mm_shuffle_epi8(values_second, SECOND_SHUFFLE);                                   // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
 
-        __m128i result_first = _mm_or_si128(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);         // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20
-        __m128i result_second = _mm_or_si128(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);      // 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00
+        __m128i result_first = _mm_or_si128(shifted_high_and_low_to_msb_first, low_hex_to_lsb_first);                      // 48 80 65 50 6C C0 6C C0 6F F0 20 00 31 10 32 20
+        __m128i result_second = _mm_or_si128(shifted_high_and_low_to_msb_second, low_hex_to_lsb_second);                   // 33 30 34 40 35 50 36 60 37 70 38 80 39 90 30 00
 
         __m128i final_result = _mm_packus_epi16(
-            _mm_and_si128(result_first, MASK_SECOND_BYTE_TO_PACK),                                            // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00
-            _mm_and_si128(result_second, MASK_SECOND_BYTE_TO_PACK)                                            // 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
+            _mm_and_si128(result_first, MASK_SECOND_BYTE_TO_PACK),                                                         // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00
+            _mm_and_si128(result_second, MASK_SECOND_BYTE_TO_PACK)                                                         // 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
         );
 #else
+
+#if ALTERNATIVE
         // SSE2: Извлекаем первые и вторые символы через маски
-        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, MASK_SECOND_BYTE_TO_PACK);               // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
-        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, MASK_FIRST_BYTE_TO_PACK);                 // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
+        __m128i high_hex_nibbles_first = _mm_and_si128(values_first, MASK_SECOND_BYTE_TO_PACK);                            // 04 00 06 00 06 00 06 00 06 00 02 00 03 00 03 00
+        __m128i low_hex_nibbles_first = _mm_and_si128(values_first, MASK_FIRST_BYTE_TO_PACK);                              // 00 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02
 
-        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, MASK_SECOND_BYTE_TO_PACK);             // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
-        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, MASK_FIRST_BYTE_TO_PACK);               // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
+        __m128i high_hex_nibbles_second = _mm_and_si128(values_second, MASK_SECOND_BYTE_TO_PACK);                          // 03 00 03 00 03 00 03 00 03 00 03 00 03 00 03 00
+        __m128i low_hex_nibbles_second = _mm_and_si128(values_second, MASK_FIRST_BYTE_TO_PACK);                            // 00 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00
 
-        __m128i low_hex_to_lsb_first = _mm_srli_epi16(low_hex_nibbles_first, 8);                              // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
-        __m128i low_hex_to_lsb_second = _mm_srli_epi16(low_hex_nibbles_second, 8);                            // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
+        __m128i low_hex_to_lsb_first = _mm_srli_epi16(low_hex_nibbles_first, 8);                                           // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
+        __m128i low_hex_to_lsb_second = _mm_srli_epi16(low_hex_nibbles_second, 8);                                         // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
 
-        __m128i pack_high_nibbles_to_lsb = _mm_packus_epi16(high_hex_nibbles_first, high_hex_nibbles_second); // 04 06 06 06 06 02 03 03 03 03 03 03 03 03 03 03
-        __m128i pack_low_nibbles_to_lsb = _mm_packus_epi16(low_hex_to_lsb_first, low_hex_to_lsb_second);      // 08 05 0C 0C 0F 00 01 02 03 04 05 06 07 08 09 00
+        __m128i pack_high_nibbles_to_lsb = _mm_packus_epi16(high_hex_nibbles_first, high_hex_nibbles_second);              // 04 06 06 06 06 02 03 03 03 03 03 03 03 03 03 03
+        __m128i pack_low_nibbles_to_lsb = _mm_packus_epi16(low_hex_to_lsb_first, low_hex_to_lsb_second);                   // 08 05 0C 0C 0F 00 01 02 03 04 05 06 07 08 09 00
 
         __m128i final_result = _mm_or_si128(_mm_slli_epi16(pack_high_nibbles_to_lsb, 4), pack_low_nibbles_to_lsb);
+#else
+        __m128i high_hex_nibble_to_msb_first = _mm_and_si128(_mm_slli_epi16(values_first, 4), MASK_SECOND_BYTE_TO_PACK);   // 40 80 60 50 60 C0 60 C0 60 F0 20 00 30 10 30 20 -> 40 00 60 00 60 00 60 00 60 00 20 00 30 00 30 00
+        __m128i low_hex_nibble_to_lsb_first = _mm_srli_epi16(values_first, 8);                                             // 08 00 05 00 0C 00 0C 00 0F 00 00 00 01 00 02 00
+
+        __m128i high_hex_nibble_to_msb_second = _mm_and_si128(_mm_slli_epi16(values_second, 4), MASK_SECOND_BYTE_TO_PACK); // 30 30 30 40 30 50 30 60 30 70 30 80 30 90 30 00 -> 30 00 30 00 30 00 30 00 30 00 30 00 30 00 30 00
+        __m128i low_hex_nibble_to_lsb_second = _mm_srli_epi16(values_second, 8);                                           // 03 00 04 00 05 00 06 00 07 00 08 00 09 00 00 00
+
+        __m128i final_result = _mm_packus_epi16(
+            _mm_or_si128(high_hex_nibble_to_msb_first, low_hex_nibble_to_lsb_first),                                       // 48 00 65 00 6C 00 6C 00 6F 00 20 00 31 00 32 00
+            _mm_or_si128(high_hex_nibble_to_msb_second, low_hex_nibble_to_lsb_second)                                      // 33 00 34 00 35 00 36 00 37 00 38 00 39 00 30 00
+        );
 #endif
 
+#endif
         // Сохраняем 16 байт результата
         _mm_storeu_si128((__m128i*)(bin + i / 2), final_result);
     }
@@ -169,10 +185,9 @@ void hex2bin(const uint8_t* hex, uint8_t* bin, size_t hex_len) {
 }
 
 void bin2hex(const uint8_t *input, char *hex, bool _case, size_t length) {
-#if __SSSE3__
     // Определяем таблицу для преобразования полубайтов в шестнадцатеричные символы
     const struct HexChars* CHARS = _case ? &ASCII_HEX_CHARS_LOWER : &ASCII_HEX_CHARS_UPPER;
-
+#if __SSSE3__
     const __m128i HEX_TABLE = _mm_load_si128((__m128i*) CHARS);
 #else
     const __m128i OFFSET_ASCII_DIGIT = _mm_set1_epi8(0x30); // '0'
@@ -181,7 +196,8 @@ void bin2hex(const uint8_t *input, char *hex, bool _case, size_t length) {
     
     const __m128i OFFSET_ASCII_ALPHABET = _case ? OFFSET_ASCII_ALPHABET_LOWER : OFFSET_ASCII_ALPHABET_UPPER;
 
-    const __m128i THRESHOLD_LAST_ASCII_DIGIT = _mm_set1_epi8(9); // Граница для выбора 0-9 или A-F, где нарушается линейная последовательность
+    // Граница для выбора 0-9, A-F, a-f, где нарушается линейная последовательность
+    const __m128i THRESHOLD_LAST_ASCII_DIGIT = _mm_set1_epi8(9);
 #endif
 
     const __m128i MASK_LOW_NIBBLE = _mm_set1_epi8(0x0F);
