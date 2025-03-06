@@ -31,10 +31,17 @@
 #include <stdbool.h>
 #include <immintrin.h>
 
+// Определяем макрос для выравнивания
+#if defined(_MSC_VER) // MSVC
+    #define ALIGNED(x) __declspec(align(x))
+#else // GCC/Clang
+    #define ALIGNED(x) __attribute__((aligned(x)))
+#endif
+
 // Определяем структуру с выравниванием на 32 байт
 struct HexChars {
     uint8_t chars[32];
-} __attribute__((aligned(32))); // Выравниваем структуру на 32 байт
+} ALIGNED(32); // Выравниваем структуру на 32 байт
 
 // Таблицы для преобразования полубайтов в шестнадцатеричные символы
 const struct HexChars ASCII_HEX_CHARS_UPPER = { .chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
