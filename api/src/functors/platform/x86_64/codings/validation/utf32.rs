@@ -33,7 +33,7 @@ pub use crate::{
 };
 
 #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -57,7 +57,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "avx", target_feature = "avx2", not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -80,7 +80,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -102,7 +102,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", target_feature = "ssse3", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     arch::{
         x86_64::{
             _mm_set_epi8,
@@ -112,7 +112,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", not(target_feature = "ssse3"), not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     arch::{
         x86_64::{
             _mm_set_epi32,
@@ -203,7 +203,7 @@ impl UTF32 {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= UTF32::is_utf32_32x16(unsafe { std::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
+                result &= UTF32::is_utf32_32x16(unsafe { core::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
             }
         }
 
@@ -277,7 +277,7 @@ impl UTF32 {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= UTF32::is_utf32_32x8(unsafe { std::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
+                result &= UTF32::is_utf32_32x8(unsafe { core::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
             }
         }
 
@@ -387,7 +387,7 @@ impl UTF32 {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= UTF32::is_utf32_32x4(unsafe { std::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                result &= UTF32::is_utf32_32x4(unsafe { core::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
             }
         }
 

@@ -32,7 +32,7 @@ pub use crate::{
     }
 };
 
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -170,7 +170,7 @@ impl UTF32 {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= UTF32::is_utf32_32x4(unsafe { std::slice::from_raw_parts::<uint32x4_t>(transmute::<*const u8, *const uint32x4_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                result &= UTF32::is_utf32_32x4(unsafe { core::slice::from_raw_parts::<uint32x4_t>(transmute::<*const u8, *const uint32x4_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
             }
         }
 

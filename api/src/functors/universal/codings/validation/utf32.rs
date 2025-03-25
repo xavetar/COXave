@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-use std::{
+use core::{
     mem::{
         transmute
     }
@@ -124,7 +124,7 @@ impl UTF32 {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= UTF32::is_utf32(unsafe { std::slice::from_raw_parts::<u128>(transmute::<*const u8, *const u128>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                result &= UTF32::is_utf32(unsafe { core::slice::from_raw_parts::<u128>(transmute::<*const u8, *const u128>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
             }
         }
 

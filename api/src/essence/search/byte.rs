@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-use std::{
+use core::{
     marker::{
         PhantomData
     }

@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-use std::{
+use core::{
     mem::{
         transmute
     }
@@ -210,6 +210,6 @@ impl UTF16 {
             if length % UTF16::__ENCODING_REGULAR_PAIR_BYTES != 0_usize { return false; }
         }
 
-        return UTF16::is_utf16(unsafe { std::slice::from_raw_parts::<u16>(transmute::<*const u8, *const u16>(array.as_ptr()), length / UTF16::__ENCODING_REGULAR_PAIR_BYTES) }, endian, omp, only);
+        return UTF16::is_utf16(unsafe { core::slice::from_raw_parts::<u16>(transmute::<*const u8, *const u16>(array.as_ptr()), length / UTF16::__ENCODING_REGULAR_PAIR_BYTES) }, endian, omp, only);
     }
 }

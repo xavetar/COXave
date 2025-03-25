@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-use std::{
+use core::{
     mem::{
         transmute
     }
@@ -72,7 +72,7 @@ impl ASCII {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= ASCII::is_ascii(unsafe { std::slice::from_raw_parts::<u128>(transmute::<*const u8, *const u128>(array.as_ptr().add(indivisible)), remains_length / 16_usize) });
+                result &= ASCII::is_ascii(unsafe { core::slice::from_raw_parts::<u128>(transmute::<*const u8, *const u128>(array.as_ptr().add(indivisible)), remains_length / 16_usize) });
             }
         }
 

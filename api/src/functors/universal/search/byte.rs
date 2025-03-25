@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-use std::{
+use core::{
     mem::{
         transmute
     }
@@ -38,7 +38,7 @@ pub use crate::{
     }
 };
 
-impl<T: std::cmp::PartialEq> ByteSearch<T> {
+impl<T: core::cmp::PartialEq> ByteSearch<T> {
 
     const fn is_search_possible(array: &[T], pattern: &[T], limit: Option<usize>) -> (usize, usize, bool) {
         return match limit {
@@ -73,8 +73,8 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
         let mut search_result: Vec<usize> = Vec::<usize>::new();
 
         let (array, pattern): (&[T], &[T]) = (
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
         );
 
         let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<T>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -127,8 +127,8 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
         let mut search_result: Vec<usize> = Vec::<usize>::new();
 
         let (array, pattern): (&[T], &[T]) = (
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
         );
 
         let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<T>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -181,8 +181,8 @@ impl<T: std::cmp::PartialEq> ByteSearch<T> {
         let mut search_result: Vec<usize> = Vec::<usize>::new();
 
         let (array, pattern): (&[T], &[T]) = (
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
-            unsafe { std::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(array_ptr.as_ptr()), array_ptr.len() / size_of::<T>()) },
+            unsafe { core::slice::from_raw_parts::<T>(transmute::<*const u8, *const T>(pattern_ptr.as_ptr()), pattern_ptr.len() / size_of::<T>()) }
         );
 
         let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<T>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }

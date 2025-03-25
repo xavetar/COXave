@@ -33,7 +33,7 @@ pub use crate::{
 };
 
 #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))]
-use std::{
+use core::{
     mem::{
         transmute,
     },
@@ -56,7 +56,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "avx", target_feature = "avx2", not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     mem::{
         transmute,
     },
@@ -75,7 +75,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     mem::{
         transmute,
     },
@@ -141,8 +141,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -561,7 +561,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -657,8 +657,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -1086,7 +1086,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -1184,8 +1184,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -1604,7 +1604,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -1737,8 +1737,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -2156,7 +2156,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -2251,8 +2251,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -2679,7 +2679,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -2776,8 +2776,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -3195,7 +3195,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -3327,8 +3327,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -3746,7 +3746,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -3841,8 +3841,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -4269,7 +4269,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {
@@ -4366,8 +4366,8 @@ macro_rules! generate_search {
                 let mut search_result: Vec<usize> = Vec::<usize>::new();
 
                 let (array, pattern): (&[$t], &[$t]) = (
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
-                    unsafe { std::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(array_ptr.as_ptr()), array_ptr.len() / $t_size) },
+                    unsafe { core::slice::from_raw_parts::<$t>(transmute::<*const u8, *const $t>(pattern_ptr.as_ptr()), pattern_ptr.len() / $t_size) }
                 );
 
                 let (array_length, pattern_length, is_search_possible): (usize, usize, bool) = ByteSearch::<$t>::is_search_possible(array, pattern, limit); if !is_search_possible { return search_result; }
@@ -4785,7 +4785,7 @@ macro_rules! generate_search {
                         }
 
                         if array_index <= array_length {
-                            matches[0] = std::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
+                            matches[0] = core::mem::zeroed::<[$t; COUNT_OF_VALUES_IN_REGISTER]>();
 
                             for i in 0..(array_length - array_index) {
                                 if array[array_index + i] == pattern[0] {

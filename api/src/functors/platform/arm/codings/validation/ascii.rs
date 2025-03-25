@@ -32,21 +32,10 @@ pub use crate::{
     }
 };
 
-use std::{
-    hint::{
-        black_box
-    },
-    mem::{
-        transmute
-    },
-    ptr::{
-        read_unaligned
-    },
+use core::{
     arch::{
         arm::{
-            uint8x8_t, uint8x16_t,
-            vdup_n_u8, vdupq_n_u8,
-            vand_u8, vandq_u8,
+            vld1_u8, vld1q_u8,
             vmaxv_u8, vmaxvq_u8
         }
     }
@@ -54,18 +43,18 @@ use std::{
 
 impl ASCII {
 
-    fn is_ascii_8x8(array: &[uint8x8_t]) -> bool {
-        let (mut index, length, mask): (usize, usize, uint8x8_t) = (0_usize, array.len(), unsafe { vdup_n_u8(0x80) });
+    fn is_ascii_8x8(array: *const u8, length: usize) -> bool {
+        let mut index: usize = 0_usize;
 
-        while index < length { if unsafe { vmaxv_u8(vand_u8(read_unaligned::<uint8x8_t>(black_box(&array[index])), mask)) } != 0_u8 { return false; } else { index += 1_usize; } }
+        while index < length { if unsafe { vmaxv_u8(vld1_u8(array.add(index))) } > 0x7F { return false; } else { index += 8_usize; } }
 
         return true;
     }
 
-    fn is_ascii_8x16(array: &[uint8x16_t]) -> bool {
-        let (mut index, length, mask): (usize, usize, uint8x16_t) = (0_usize, array.len(), unsafe { vdupq_n_u8(0x80) });
+    fn is_ascii_8x16(array: *const u8, length: usize) -> bool {
+        let mut index: usize = 0_usize;
 
-        while index < length { if unsafe { vmaxvq_u8(vandq_u8(read_unaligned::<uint8x16_t>(black_box(&array[index])), mask)) } != 0_u8 { return false; } else { index += 1_usize; } }
+        while index < length { if unsafe { vmaxvq_u8(vld1q_u8(array.add(index))) } > 0x7F { return false; } else { index += 16_usize; } }
 
         return true;
     }
@@ -79,21 +68,21 @@ impl ASCII {
 
         if indivisible != 0_usize {
             if indivisible < 9_usize {
-                let indivisible_code_array: uint8x8_t = {
+                let indivisible_code_array: [u8; 8_usize] = {
                     let mut indivisible_code_array: [u8; 8_usize] = [0_u8; 8_usize];
                     while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                    unsafe { transmute::<[u8; 8_usize], uint8x8_t>(indivisible_code_array) }
+                    indivisible_code_array
                 };
 
-                result &= ASCII::is_ascii_8x8(&[indivisible_code_array]);
+                result &= ASCII::is_ascii_8x8(indivisible_code_array.as_ptr(), 1_usize);
             } else if indivisible < 16_usize {
-                let indivisible_code_array: uint8x16_t = {
+                let indivisible_code_array: [u8; 16_usize] = {
                     let mut indivisible_code_array: [u8; 16_usize] = [0_u8; 16_usize];
                     while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                    unsafe { transmute::<[u8; 16_usize], uint8x16_t>(indivisible_code_array) }
+                    indivisible_code_array
                 };
 
-                result &= ASCII::is_ascii_8x16(&[indivisible_code_array]);
+                result &= ASCII::is_ascii_8x16(indivisible_code_array.as_ptr(), 1_usize);
             }
         }
 
@@ -101,7 +90,7 @@ impl ASCII {
             let remains_length: usize = length - indivisible;
 
             if remains_length != 0_usize {
-                result &= ASCII::is_ascii_8x16(unsafe { std::slice::from_raw_parts::<uint8x16_t>(transmute::<*const u8, *const uint8x16_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) });
+                result &= ASCII::is_ascii_8x16(unsafe { array.as_ptr().add(indivisible) }, remains_length);
             }
         }
 

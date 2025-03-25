@@ -33,7 +33,7 @@ pub use crate::{
 };
 
 #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -58,7 +58,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "avx", target_feature = "avx2", not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -86,7 +86,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -113,7 +113,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", target_feature = "ssse3", not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     arch::{
         x86::{
             _mm_set_epi8,
@@ -123,7 +123,7 @@ use std::{
 };
 
 #[cfg(all(target_feature = "sse2", not(target_feature = "ssse3"), not(target_feature = "avx2"), not(target_feature = "avx512f"), not(target_feature = "avx512bw")))]
-use std::{
+use core::{
     arch::{
         x86::{
             _mm_sra_epi16,
@@ -549,12 +549,12 @@ impl UTF16 {
             if remains_length != 0_usize {
                 if only {
                     if omp {
-                        result &= UTF16::is_utf16_omp_16x32(unsafe { std::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
+                        result &= UTF16::is_utf16_omp_16x32(unsafe { core::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
                     } else {
-                        result &= UTF16::is_utf16_bmp_16x32(unsafe { std::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
+                        result &= UTF16::is_utf16_bmp_16x32(unsafe { core::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian);
                     }
                 } else {
-                    result &= UTF16::is_utf16_mixed_16x32(unsafe { std::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian, continuation);
+                    result &= UTF16::is_utf16_mixed_16x32(unsafe { core::slice::from_raw_parts::<__m512i>(transmute::<*const u8, *const __m512i>(array.as_ptr().add(indivisible)), remains_length / 64_usize) }, endian, continuation);
                 }
             }
         }
@@ -1011,12 +1011,12 @@ impl UTF16 {
             if remains_length != 0_usize {
                 if only {
                     if omp {
-                        result &= UTF16::is_utf16_omp_16x16(unsafe { std::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
+                        result &= UTF16::is_utf16_omp_16x16(unsafe { core::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
                     } else {
-                        result &= UTF16::is_utf16_bmp_16x16(unsafe { std::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
+                        result &= UTF16::is_utf16_bmp_16x16(unsafe { core::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian);
                     }
                 } else {
-                    result &= UTF16::is_utf16_mixed_16x16(unsafe { std::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian, continuation);
+                    result &= UTF16::is_utf16_mixed_16x16(unsafe { core::slice::from_raw_parts::<__m256i>(transmute::<*const u8, *const __m256i>(array.as_ptr().add(indivisible)), remains_length / 32_usize) }, endian, continuation);
                 }
             }
         }
@@ -1498,12 +1498,12 @@ impl UTF16 {
             if remains_length != 0_usize {
                 if only {
                     if omp {
-                        result &= UTF16::is_utf16_omp_16x8(unsafe { std::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_omp_16x8(unsafe { core::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
                     } else {
-                        result &= UTF16::is_utf16_bmp_16x8(unsafe { std::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_bmp_16x8(unsafe { core::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
                     }
                 } else {
-                    result &= UTF16::is_utf16_mixed_16x8(unsafe { std::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian, continuation);
+                    result &= UTF16::is_utf16_mixed_16x8(unsafe { core::slice::from_raw_parts::<__m128i>(transmute::<*const u8, *const __m128i>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian, continuation);
                 }
             }
         }

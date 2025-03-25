@@ -32,7 +32,7 @@ pub use crate::{
     }
 };
 
-use std::{
+use core::{
     hint::{
         black_box
     },
@@ -550,12 +550,12 @@ impl UTF16 {
             if remains_length != 0_usize {
                 if only {
                     if omp {
-                        result &= UTF16::is_utf16_omp_16x8(unsafe { std::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_omp_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
                     } else {
-                        result &= UTF16::is_utf16_bmp_16x8(unsafe { std::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_bmp_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
                     }
                 } else {
-                    result &= UTF16::is_utf16_mixed_16x8(unsafe { std::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian, continuation);
+                    result &= UTF16::is_utf16_mixed_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian, continuation);
                 }
             }
         }
