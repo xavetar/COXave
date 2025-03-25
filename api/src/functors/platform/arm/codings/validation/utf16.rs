@@ -33,30 +33,23 @@ pub use crate::{
 };
 
 use core::{
-    hint::{
-        black_box
-    },
     mem::{
         transmute
     },
-    ptr::{
-        read_unaligned
-    },
     arch::{
-        arm::{
+        aarch64::{
             uint16x4_t, uint16x8_t,
-            vdup_n_u16, vdupq_n_u16,
+            vld1_u8, vld1q_u8,
             vld1_u16, vld1q_u16,
-            vmaxv_u16, vmaxvq_u16,
+            vrev16_u8, vrev16q_u8,
+            vdup_n_u16, vdupq_n_u16,
             vclt_u16, vcltq_u16,
             vcgt_u16, vcgtq_u16,
             vceq_u16, vceqq_u16,
             vorr_u16, vorrq_u16,
             vand_u16, vandq_u16,
-            vrev16_u8, vrev16q_u8,
-            vreinterpret_u8_u16, vreinterpretq_u8_u16,
-            vreinterpret_u16_u8, vreinterpretq_u16_u8,
-            vextq_u16, vmvnq_u16
+            vextq_u16, vmvnq_u16,
+            vreinterpret_u16_u8, vreinterpretq_u16_u8
         }
     }
 };
@@ -66,161 +59,161 @@ impl UTF16 {
     const __ENCODING_REGULAR_PAIR_BYTES:   usize = 2_usize;
     const __ENCODING_SURROGATE_PAIR_BYTES: usize = 4_usize;
 
-    fn is_utf16_bmp_16x4(array: &[uint16x4_t], endian: bool) -> bool {
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
+    fn is_utf16_bmp_16x4(array: *const u8, length: usize, endian: bool) -> bool {
+        let mut offset: usize = 0_usize;
 
         let (bad_range_mask, bad_result_mask): (uint16x4_t, uint16x4_t) =
-        unsafe { (vdup_n_u16(0xF800), vdup_n_u16(0xD800)) };
+            unsafe { (vdup_n_u16(0xF800), vdup_n_u16(0xD800)) };
 
         if endian {
-            while index < length {
+            while offset < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vld1_u8(array.add(offset)))) }
                 } else {
-                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
+                    unsafe { vreinterpret_u16_u8(vld1_u8(array.add(offset))) }
                 };
 
-                if unsafe { vmaxv_u16(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x4_t, u64>(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u64 { return false; }
 
-                index += 1_usize;
+                offset += 8_usize;
             }
         } else {
-            while index < length {
+            while offset < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
+                    unsafe { vreinterpret_u16_u8(vld1_u8(array.add(offset))) }
                 } else {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vld1_u8(array.add(offset)))) }
                 };
 
-                if unsafe { vmaxv_u16(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x4_t, u64>(vceq_u16(vand_u16(value, bad_range_mask), bad_result_mask)) } != 0_u64 { return false; }
 
-                index += 1_usize;
+                offset += 8_usize;
             }
         }
 
         return true;
     }
 
-    fn is_utf16_bmp_16x8(array: &[uint16x8_t], endian: bool) -> bool {
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
+    fn is_utf16_bmp_16x8(array: *const u8, length: usize, endian: bool) -> bool {
+        let mut offset: usize = 0_usize;
 
         let (bad_range_mask, bad_result_mask): (uint16x8_t, uint16x8_t) =
-        unsafe { (vdupq_n_u16(0xF800), vdupq_n_u16(0xD800)) };
+            unsafe { (vdupq_n_u16(0xF800), vdupq_n_u16(0xD800)) };
 
         if endian {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 } else {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 };
 
-                if unsafe { vmaxvq_u16(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x8_t, u128>(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u128 { return false; }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
         } else {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 };
 
-                if unsafe { vmaxvq_u16(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x8_t, u128>(vceqq_u16(vandq_u16(value, bad_range_mask), bad_result_mask)) } != 0_u128 { return false; }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
         }
 
         return true;
     }
 
-    fn is_utf16_omp_16x4(array: &[uint16x4_t], endian: bool) -> bool {
+    fn is_utf16_omp_16x4(array: *const u8, length: usize, endian: bool) -> bool {
 
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
+        let mut offset: usize = 0_usize;
 
         let (restricted_less_than_mask, restricted_big_than_mask): (uint16x4_t, uint16x4_t) =
-        unsafe {
-            (
-                vld1_u16([0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
-                vld1_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
-            )
-        };
+            unsafe {
+                (
+                    vld1_u16([0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
+                    vld1_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
+                )
+            };
 
         if endian {
-            while index < length {
+            while offset < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vld1_u8(array.add(offset)))) }
                 } else {
-                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
+                    unsafe { vreinterpret_u16_u8(vld1_u8(array.add(offset))) }
                 };
 
-                if unsafe { vmaxv_u16(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x4_t, u64>(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u64 { return false; }
 
-                index += 1_usize;
+                offset += 8_usize;
             }
         } else {
-            while index < length {
+            while offset < length {
                 let value: uint16x4_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned::<uint16x4_t>(black_box(&array[index])) }
+                    unsafe { vreinterpret_u16_u8(vld1_u8(array.add(offset))) }
                 } else {
-                    unsafe { vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(read_unaligned::<uint16x4_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpret_u16_u8(vrev16_u8(vld1_u8(array.add(offset)))) }
                 };
 
-                if unsafe { vmaxv_u16(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x4_t, u64>(vorr_u16(vclt_u16(value, restricted_less_than_mask), vcgt_u16(value, restricted_big_than_mask))) } != 0_u64 { return false; }
 
-                index += 1_usize;
+                offset += 8_usize;
             }
         }
 
         return true;
     }
 
-    fn is_utf16_omp_16x8(array: &[uint16x8_t], endian: bool) -> bool {
+    fn is_utf16_omp_16x8(array: *const u8, length: usize, endian: bool) -> bool {
 
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
+        let mut offset: usize = 0_usize;
 
         let (restricted_less_than_mask, restricted_big_than_mask): (uint16x8_t, uint16x8_t) =
-        unsafe {
-            (
-                vld1q_u16([0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
-                vld1q_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
-            )
-        };
+            unsafe {
+                (
+                    vld1q_u16([0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00, 0xD800, 0xDC00].as_ptr()),
+                    vld1q_u16([0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF, 0xDBFF, 0xDFFF].as_ptr())
+                )
+            };
 
         if endian {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 } else {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 };
 
-                if unsafe { vmaxvq_u16(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x8_t, u128>(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u128 { return false; }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
         } else {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 };
 
-                if unsafe { vmaxvq_u16(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u16 { return false; }
+                if unsafe { transmute::<uint16x8_t, u128>(vorrq_u16(vcltq_u16(value, restricted_less_than_mask), vcgtq_u16(value, restricted_big_than_mask))) } != 0_u128 { return false; }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
         }
 
         return true;
     }
 
-    fn is_utf16_mixed_16x8(array: &[uint16x8_t], endian: bool, mut continuation: bool) -> bool {
+    fn is_utf16_mixed_16x8(array: *const u8, length: usize, endian: bool, mut continuation: bool) -> bool {
 
-        let (mut index, length): (usize, usize) = (0_usize, array.len());
+        let mut offset: usize = 0_usize;
 
         let (any_part_surrogate_detect_mask, following_surrogate_detect_mask): (uint16x8_t, uint16x8_t) = unsafe {
             (vdupq_n_u16(0xF800), vdupq_n_u16(0xFC00))
@@ -241,25 +234,25 @@ impl UTF16 {
         let zero: uint16x8_t = unsafe { vdupq_n_u16(0x0000) };
 
         if endian {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 } else {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 };
 
                 let any_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, any_part_surrogate_detect_mask), high_surrogate_detect_mask) };
 
-                if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 {
+                if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 {
                     let following_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, following_surrogate_detect_mask), low_surrogate_detect_mask) };
 
                     if continuation {
-                        if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                        if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                             let (any_surrogate_mask, following_surrogate_mask): (uint16x8_t, uint16x8_t) = if unsafe {
-                                vmaxvq_u16(vandq_u16(following_surrogate_mask, test_following_continuation_mask))
-                            } != 0_u16 {
-                                if unsafe { vmaxvq_u16(vandq_u16(any_surrogate_mask, test_continuation_mask)) } == 0_u16 { continuation = false; }
-                                else if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, test_continuation_mask)) } != 0_u16 { continuation = false; }
+                                transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_following_continuation_mask))
+                            } != 0_u128 {
+                                if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(any_surrogate_mask, test_continuation_mask)) } == 0_u128 { continuation = false; }
+                                else if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_continuation_mask)) } != 0_u128 { continuation = false; }
 
                                 if continuation {
                                     unsafe { (vextq_u16::<1>(vandq_u16(any_surrogate_mask, ignore_leading_continuation_mask), zero), vextq_u16::<1>(following_surrogate_mask, zero)) }
@@ -271,31 +264,31 @@ impl UTF16 {
                                 return false;
                             };
 
-                            if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                            if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                                 let potential_high_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<1>(following_surrogate_mask, zero) };
 
-                                if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u16 {
+                                if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u128 {
                                     let high_surrogates_mask: uint16x8_t = unsafe { vandq_u16(any_surrogate_mask, vmvnq_u16(following_surrogate_mask)) };
 
                                     let potential_following_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<7>(zero, high_surrogates_mask) };
 
-                                    if unsafe { vmaxvq_u16(high_surrogates_mask) } == 0_u16 { return false; }
+                                    if unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } == 0_u128 { return false; }
                                     else if unsafe { transmute::<uint16x8_t, u128>(potential_high_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } { return false; }
                                     else if unsafe { transmute::<uint16x8_t, u128>(potential_following_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } { return false; }
                                 } else {
                                     return false;
                                 }
                             } else {
-                                if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 { return false; }
+                                if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 { return false; }
                             }
                         } else {
                             return false;
                         }
                     } else {
                         let (any_surrogate_mask, following_surrogate_mask): (uint16x8_t, uint16x8_t) = if unsafe {
-                            vmaxvq_u16(vandq_u16(any_surrogate_mask, test_continuation_mask))
-                        } != 0_u16 {
-                            if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, test_continuation_mask)) } == 0_u16 { continuation = true; }
+                            transmute::<uint16x8_t, u128>(vandq_u16(any_surrogate_mask, test_continuation_mask))
+                        } != 0_u128 {
+                            if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_continuation_mask)) } == 0_u128 { continuation = true; }
 
                             if continuation {
                                 unsafe { (vandq_u16(any_surrogate_mask, ignore_leading_continuation_mask), following_surrogate_mask) }
@@ -306,53 +299,53 @@ impl UTF16 {
                             (any_surrogate_mask, following_surrogate_mask)
                         };
 
-                        if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                        if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                             let potential_high_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<1>(following_surrogate_mask, zero) };
 
-                            if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u16 {
+                            if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u128 {
 
                                 let high_surrogates_mask: uint16x8_t = unsafe { vandq_u16(any_surrogate_mask, vmvnq_u16(following_surrogate_mask)) };
 
                                 let potential_following_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<7>(zero, high_surrogates_mask) };
 
-                                if unsafe { vmaxvq_u16(high_surrogates_mask) } == 0_u16 { return false; }
+                                if unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } == 0_u128 { return false; }
                                 else if unsafe { transmute::<uint16x8_t, u128>(potential_high_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } {return false; }
                                 else if unsafe { transmute::<uint16x8_t, u128>(potential_following_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } { return false; }
                             } else {
                                 return false;
                             }
                         } else {
-                            if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 { return false; }
+                            if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 { return false; }
                         }
                     }
                 } else {
                     if continuation { return false; }
                 }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
 
             if continuation { return false; }
         } else {
-            while index < length {
+            while offset < length {
                 let value: uint16x8_t = if cfg!(target_endian = "big") {
-                    unsafe { read_unaligned::<uint16x8_t>(black_box(&array[index])) }
+                    unsafe { vreinterpretq_u16_u8(vld1q_u8(array.add(offset))) }
                 } else {
-                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(read_unaligned::<uint16x8_t>(black_box(&array[index]))))) }
+                    unsafe { vreinterpretq_u16_u8(vrev16q_u8(vld1q_u8(array.add(offset)))) }
                 };
 
                 let any_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, any_part_surrogate_detect_mask), high_surrogate_detect_mask) };
 
-                if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 {
+                if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 {
                     let following_surrogate_mask: uint16x8_t = unsafe { vceqq_u16(vandq_u16(value, following_surrogate_detect_mask), low_surrogate_detect_mask) };
 
                     if continuation {
-                        if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                        if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                             let (any_surrogate_mask, following_surrogate_mask): (uint16x8_t, uint16x8_t) = if unsafe {
-                                vmaxvq_u16(vandq_u16(following_surrogate_mask, test_following_continuation_mask))
-                            } != 0_u16 {
-                                if unsafe { vmaxvq_u16(vandq_u16(any_surrogate_mask, test_continuation_mask)) } == 0_u16 { continuation = false; }
-                                else if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, test_continuation_mask)) } != 0_u16 { continuation = false; }
+                                transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_following_continuation_mask))
+                            } != 0_u128 {
+                                if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(any_surrogate_mask, test_continuation_mask)) } == 0_u128 { continuation = false; }
+                                else if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_continuation_mask)) } != 0_u128 { continuation = false; }
 
                                 if continuation {
                                     unsafe { (vextq_u16::<1>(vandq_u16(any_surrogate_mask, ignore_leading_continuation_mask), zero), vextq_u16::<1>(following_surrogate_mask, zero)) }
@@ -364,31 +357,31 @@ impl UTF16 {
                                 return false;
                             };
 
-                            if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                            if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                                 let potential_high_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<1>(following_surrogate_mask, zero) };
 
-                                if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u16 {
+                                if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u128 {
                                     let high_surrogates_mask: uint16x8_t = unsafe { vandq_u16(any_surrogate_mask, vmvnq_u16(following_surrogate_mask)) };
 
                                     let potential_following_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<7>(zero, high_surrogates_mask) };
 
-                                    if unsafe { vmaxvq_u16(high_surrogates_mask) } == 0_u16 { return false; }
+                                    if unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } == 0_u128 { return false; }
                                     else if unsafe { transmute::<uint16x8_t, u128>(potential_high_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } { return false; }
                                     else if unsafe { transmute::<uint16x8_t, u128>(potential_following_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } { return false; }
                                 } else {
                                     return false;
                                 }
                             } else {
-                                if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 { return false; }
+                                if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 { return false; }
                             }
                         } else {
                             return false;
                         }
                     } else {
                         let (any_surrogate_mask, following_surrogate_mask): (uint16x8_t, uint16x8_t) = if unsafe {
-                            vmaxvq_u16(vandq_u16(any_surrogate_mask, test_continuation_mask))
-                        } != 0_u16 {
-                            if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, test_continuation_mask)) } == 0_u16 { continuation = true; }
+                            transmute::<uint16x8_t, u128>(vandq_u16(any_surrogate_mask, test_continuation_mask))
+                        } != 0_u128 {
+                            if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, test_continuation_mask)) } == 0_u128 { continuation = true; }
 
                             if continuation {
                                 unsafe { (vandq_u16(any_surrogate_mask, ignore_leading_continuation_mask), following_surrogate_mask) }
@@ -399,30 +392,30 @@ impl UTF16 {
                             (any_surrogate_mask, following_surrogate_mask)
                         };
 
-                        if unsafe { vmaxvq_u16(following_surrogate_mask) } != 0_u16 {
+                        if unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } != 0_u128 {
                             let potential_high_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<1>(following_surrogate_mask, zero) };
 
-                            if unsafe { vmaxvq_u16(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u16 {
+                            if unsafe { transmute::<uint16x8_t, u128>(vandq_u16(following_surrogate_mask, potential_high_surrogates_mask)) } == 0_u128 {
 
                                 let high_surrogates_mask: uint16x8_t = unsafe { vandq_u16(any_surrogate_mask, vmvnq_u16(following_surrogate_mask)) };
 
                                 let potential_following_surrogates_mask: uint16x8_t = unsafe { vextq_u16::<7>(zero, high_surrogates_mask) };
 
-                                if unsafe { vmaxvq_u16(high_surrogates_mask) } == 0_u16 { return false; }
+                                if unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } == 0_u128 { return false; }
                                 else if unsafe { transmute::<uint16x8_t, u128>(potential_high_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(high_surrogates_mask) } {return false; }
                                 else if unsafe { transmute::<uint16x8_t, u128>(potential_following_surrogates_mask) } != unsafe { transmute::<uint16x8_t, u128>(following_surrogate_mask) } { return false; }
                             } else {
                                 return false;
                             }
                         } else {
-                            if unsafe { vmaxvq_u16(any_surrogate_mask) } != 0_u16 { return false; }
+                            if unsafe { transmute::<uint16x8_t, u128>(any_surrogate_mask) } != 0_u128 { return false; }
                         }
                     }
                 } else {
                     if continuation { return false; }
                 }
 
-                index += 1_usize;
+                offset += 16_usize;
             }
 
             if continuation { return false; }
@@ -449,67 +442,63 @@ impl UTF16 {
             if only {
                 if indivisible < 9_usize {
                     if omp {
-                        let indivisible_code_array: uint16x4_t = {
+                        let indivisible_code_array: [u8; 8_usize] = {
                             if endian {
                                 let mut indivisible_code_array: [u8; 8_usize] = [0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC];
-
                                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                                unsafe { transmute::<[u8; 8_usize], uint16x4_t>(indivisible_code_array) }
+                                indivisible_code_array
                             } else {
                                 let mut indivisible_code_array: [u8; 8_usize] = [0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00];
-
                                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                                unsafe { transmute::<[u8; 8_usize], uint16x4_t>(indivisible_code_array) }
+                                indivisible_code_array
                             }
                         };
 
-                        result &= UTF16::is_utf16_omp_16x4(&[indivisible_code_array], endian);
+                        result &= UTF16::is_utf16_omp_16x4(indivisible_code_array.as_ptr(), 1_usize, endian);
 
                     } else {
-                        let indivisible_code_array: uint16x4_t = {
+                        let indivisible_code_array: [u8; 8_usize] = {
                             let mut indivisible_code_array: [u8; 8_usize] = [0_u8; 8_usize];
                             while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                            unsafe { transmute::<[u8; 8_usize], uint16x4_t>(indivisible_code_array) }
+                            indivisible_code_array
                         };
 
-                        result &= UTF16::is_utf16_bmp_16x4(&[indivisible_code_array], endian);
+                        result &= UTF16::is_utf16_bmp_16x4(indivisible_code_array.as_ptr(), 1_usize, endian);
                     }
                 } else if indivisible < 17_usize {
                     if omp {
-                        let indivisible_code_array: uint16x8_t = {
+                        let indivisible_code_array: [u8; 16_usize] = {
                             if endian {
                                 let mut indivisible_code_array: [u8; 16_usize] = [0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC];
-
                                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                                unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                                indivisible_code_array
                             } else {
                                 let mut indivisible_code_array: [u8; 16_usize] = [0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00, 0xD8, 0x00, 0xDC, 0x00];
-
                                 while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                                unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                                indivisible_code_array
                             }
                         };
 
-                        result &= UTF16::is_utf16_omp_16x8(&[indivisible_code_array], endian);
+                        result &= UTF16::is_utf16_omp_16x8(indivisible_code_array.as_ptr(), 1_usize, endian);
                     } else {
-                        let indivisible_code_array: uint16x8_t = {
+                        let indivisible_code_array: [u8; 16_usize] = {
                             let mut indivisible_code_array: [u8; 16_usize] = [0_u8; 16_usize];
                             while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                            unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                            indivisible_code_array
                         };
 
-                        result &= UTF16::is_utf16_bmp_16x8(&[indivisible_code_array], endian);
+                        result &= UTF16::is_utf16_bmp_16x8(indivisible_code_array.as_ptr(), 1_usize, endian);
                     }
                 }
             } else {
                 if length < 17_usize {
-                    let indivisible_code_array: uint16x8_t = {
+                    let indivisible_code_array: [u8; 16_usize] = {
                         let mut indivisible_code_array: [u8; 16_usize] = [0_u8; 16_usize];
                         while index < indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                        unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                        indivisible_code_array
                     };
 
-                    result &= UTF16::is_utf16_mixed_16x8(&[indivisible_code_array], endian, false);
+                    result &= UTF16::is_utf16_mixed_16x8(indivisible_code_array.as_ptr(), 1_usize, endian, false);
                 } else {
                     let align_indivisible: usize = indivisible + indivisible % 2_usize;
 
@@ -520,24 +509,24 @@ impl UTF16 {
                     };
 
                     if (array[potentially_surrogate_index] & 0xFC) != 0xD8 {
-                        let indivisible_code_array: uint16x8_t = {
+                        let indivisible_code_array: [u8; 16_usize] = {
                             let mut indivisible_code_array: [u8; 16_usize] = [0_u8; 16_usize];
                             while index < align_indivisible { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                            unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                            indivisible_code_array
                         };
 
-                        result &= UTF16::is_utf16_mixed_16x8(&[indivisible_code_array], endian, false);
+                        result &= UTF16::is_utf16_mixed_16x8(indivisible_code_array.as_ptr(), 1_usize, endian, false);
                     } else {
                         continuation = true;
 
                         if potentially_surrogate_index >= 2_usize {
-                            let indivisible_code_array: uint16x8_t = {
+                            let indivisible_code_array: [u8; 16_usize] = {
                                 let mut indivisible_code_array: [u8; 16_usize] = [0_u8; 16_usize];
                                 while index < align_indivisible - 2_usize { indivisible_code_array[index] = array[index]; index += 1_usize; }
-                                unsafe { transmute::<[u8; 16_usize], uint16x8_t>(indivisible_code_array) }
+                                indivisible_code_array
                             };
 
-                            result &= UTF16::is_utf16_mixed_16x8(&[indivisible_code_array], endian, false);
+                            result &= UTF16::is_utf16_mixed_16x8(indivisible_code_array.as_ptr(), 1_usize, endian, false);
                         }
                     }
                 }
@@ -550,12 +539,12 @@ impl UTF16 {
             if remains_length != 0_usize {
                 if only {
                     if omp {
-                        result &= UTF16::is_utf16_omp_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_omp_16x8(unsafe { array.as_ptr().add(indivisible) }, remains_length, endian);
                     } else {
-                        result &= UTF16::is_utf16_bmp_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian);
+                        result &= UTF16::is_utf16_bmp_16x8(unsafe { array.as_ptr().add(indivisible) }, remains_length, endian);
                     }
                 } else {
-                    result &= UTF16::is_utf16_mixed_16x8(unsafe { core::slice::from_raw_parts::<uint16x8_t>(transmute::<*const u8, *const uint16x8_t>(array.as_ptr().add(indivisible)), remains_length / 16_usize) }, endian, continuation);
+                    result &= UTF16::is_utf16_mixed_16x8(unsafe { array.as_ptr().add(indivisible) }, remains_length, endian, continuation);
                 }
             }
         }

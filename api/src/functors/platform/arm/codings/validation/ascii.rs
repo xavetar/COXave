@@ -33,10 +33,15 @@ pub use crate::{
 };
 
 use core::{
+    mem::{
+        transmute
+    },
     arch::{
         arm::{
+            uint8x8_t, uint8x16_t,
+            vdup_n_u8, vdupq_n_u8,
             vld1_u8, vld1q_u8,
-            vmaxv_u8, vmaxvq_u8
+            vand_u8, vandq_u8
         }
     }
 };
@@ -44,17 +49,17 @@ use core::{
 impl ASCII {
 
     fn is_ascii_8x8(array: *const u8, length: usize) -> bool {
-        let mut index: usize = 0_usize;
+        let (mut index, mask): (usize, uint8x8_t) = (0_usize, unsafe { vdup_n_u8(0x80) });
 
-        while index < length { if unsafe { vmaxv_u8(vld1_u8(array.add(index))) } > 0x7F { return false; } else { index += 8_usize; } }
+        while index < length { if unsafe { transmute::<uint8x8_t, u64>(vand_u8(vld1_u8(array.add(index)), mask)) } != 0_u64 { return false; } else { index += 8_usize; } }
 
         return true;
     }
 
     fn is_ascii_8x16(array: *const u8, length: usize) -> bool {
-        let mut index: usize = 0_usize;
+        let (mut index, mask): (usize, uint8x16_t) = (0_usize, unsafe { vdupq_n_u8(0x80) });
 
-        while index < length { if unsafe { vmaxvq_u8(vld1q_u8(array.add(index))) } > 0x7F { return false; } else { index += 16_usize; } }
+        while index < length { if unsafe { transmute::<uint8x16_t, u128>(vandq_u8(vld1q_u8(array.add(index)), mask)) } != 0_u128 { return false; } else { index += 16_usize; } }
 
         return true;
     }

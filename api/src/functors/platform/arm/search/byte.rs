@@ -44,14 +44,13 @@ use core::{
             vandq_u8, vandq_u16, vandq_u32,
             vmvnq_u8, vmvnq_u16, vmvnq_u32,
             vceqq_u8, vceqq_u16, vceqq_u32,
-            vst1q_u8, vst1q_u16, vst1q_u32,
-            vmaxvq_u8, vmaxvq_u16, vmaxvq_u32
+            vst1q_u8, vst1q_u16, vst1q_u32
         }
     }
 };
 
 macro_rules! generate_search {
-    ($t:ty, $t_default:expr, $not_ignore_mask:expr, $t_size:expr, $precision:ty, $register_size:expr, $load:expr, $store:expr, $dup_one_t:expr, $eq_compare:expr, $bitwise_and:expr, $bitwise_not:expr, $vector_max:expr) => {
+    ($t:ty, $t_default:expr, $not_ignore_mask:expr, $t_size:expr, $precision:ty, $register_size:expr, $load:expr, $store:expr, $dup_one_t:expr, $eq_compare:expr, $bitwise_and:expr, $bitwise_not:expr, $vector_to_scalar:expr) => {
         impl ByteSearch<$t> {
 
             const fn is_search_possible(array: &[$t], pattern: &[$t], limit: Option<usize>) -> (usize, usize, bool) {
@@ -105,7 +104,7 @@ macro_rules! generate_search {
 
                 let (mut array_ptr, mut array_index, mut remains_length, mut index_of_match): (*const $t, usize, usize, usize) = (array.as_ptr(), 0_usize, array_length, 0_usize);
 
-                let (mut matches, zero): ([[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t) = ([[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t_default);
+                let mut matches: [[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize] = [[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize];
 
                 unsafe {
                     if pattern_length == 1_usize {
@@ -129,7 +128,7 @@ macro_rules! generate_search {
                                 $store(matches[3].as_mut_ptr(), $eq_compare(four, pattern_mask));
 
                                 for i in 0..4 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -156,7 +155,7 @@ macro_rules! generate_search {
                                 $store(matches[2].as_mut_ptr(), $eq_compare(third, pattern_mask));
 
                                 for i in 0..3 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -181,7 +180,7 @@ macro_rules! generate_search {
                                 $store(matches[1].as_mut_ptr(), $eq_compare(second, pattern_mask));
 
                                 for i in 0..2 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -199,7 +198,7 @@ macro_rules! generate_search {
 
                                 $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                         else { index_of_match += 1_usize; }
@@ -223,7 +222,7 @@ macro_rules! generate_search {
 
                             $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < remains_length {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                     else { index_of_match += 1_usize; }
@@ -262,7 +261,7 @@ macro_rules! generate_search {
                                 $store(matches[3].as_mut_ptr(), $bitwise_and($eq_compare(s_four, start_pattern_mask), $eq_compare(e_four, end_pattern_mask)));
 
                                 for i in 0..4 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -297,7 +296,7 @@ macro_rules! generate_search {
                                 $store(matches[2].as_mut_ptr(), $bitwise_and($eq_compare(s_third, start_pattern_mask), $eq_compare(e_third, end_pattern_mask)));
 
                                 for i in 0..3 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -327,7 +326,7 @@ macro_rules! generate_search {
                                 $store(matches[1].as_mut_ptr(), $bitwise_and($eq_compare(s_second, start_pattern_mask), $eq_compare(e_second, end_pattern_mask)));
 
                                 for i in 0..2 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                             else { index_of_match += 1_usize; }
@@ -351,7 +350,7 @@ macro_rules! generate_search {
 
                                 $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                         else { index_of_match += 1_usize; }
@@ -380,7 +379,7 @@ macro_rules! generate_search {
 
                             $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < remains_length {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); return search_result; }
                                     else { index_of_match += 1_usize; }
@@ -405,13 +404,13 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
                                                 let mut result: bool = true;
 
                                                 for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) != 0 {
@@ -420,7 +419,7 @@ macro_rules! generate_search {
                                                 }
 
                                                 if result {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) == 0 {
@@ -447,10 +446,10 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)),
                                                     pattern_loaded
                                                 ))) == 0 {
@@ -480,10 +479,10 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)), pattern_loaded),
                                                 ), pattern_ignore_mask)) == 0 {
                                                     search_result.push((array_index + index_of_match) * $t_size); return search_result;
@@ -511,13 +510,13 @@ macro_rules! generate_search {
                             }
 
                             if pattern_length > COUNT_OF_VALUES_IN_REGISTER {
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
                                             let mut result: bool = true;
 
                                             for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) != 0 {
@@ -526,7 +525,7 @@ macro_rules! generate_search {
                                             }
 
                                             if result {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) == 0 {
@@ -540,10 +539,10 @@ macro_rules! generate_search {
                             } else if pattern_length == COUNT_OF_VALUES_IN_REGISTER {
                                 let pattern_loaded: $precision = $load(pattern.as_ptr());
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)),
                                                 pattern_loaded
                                             ))) == 0 {
@@ -560,10 +559,10 @@ macro_rules! generate_search {
                                     ($load(pattern_array.as_ptr()), $load(ignore_mask.as_ptr()))
                                 };
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)), pattern_loaded),
                                             ), pattern_ignore_mask)) == 0 {
                                                 search_result.push((array_index + index_of_match) * $t_size); return search_result;
@@ -602,7 +601,7 @@ macro_rules! generate_search {
 
                 let (mut array_ptr, mut array_index, mut remains_length, mut index_of_match): (*const $t, usize, usize, usize) = (array.as_ptr(), 0_usize, array_length, 0_usize);
 
-                let (mut matches, zero): ([[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t) = ([[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t_default);
+                let mut matches: [[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize] = [[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize];
 
                 unsafe {
                     if pattern_length == 1_usize {
@@ -626,7 +625,7 @@ macro_rules! generate_search {
                                 $store(matches[3].as_mut_ptr(), $eq_compare(four, pattern_mask));
 
                                 for i in 0..4 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -653,7 +652,7 @@ macro_rules! generate_search {
                                 $store(matches[2].as_mut_ptr(), $eq_compare(third, pattern_mask));
 
                                 for i in 0..3 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -678,7 +677,7 @@ macro_rules! generate_search {
                                 $store(matches[1].as_mut_ptr(), $eq_compare(second, pattern_mask));
 
                                 for i in 0..2 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -696,7 +695,7 @@ macro_rules! generate_search {
 
                                 $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                         else { index_of_match += 1_usize; }
@@ -720,7 +719,7 @@ macro_rules! generate_search {
 
                             $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < remains_length {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                     else { index_of_match += 1_usize; }
@@ -760,7 +759,7 @@ macro_rules! generate_search {
 
                                 for i in 0..4 {
                                     if next_pass { index_of_match += 1_usize; next_pass = false; }
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 2_usize; }
                                             else { index_of_match += 1_usize; }
@@ -795,7 +794,7 @@ macro_rules! generate_search {
 
                                 for i in 0..3 {
                                     if next_pass { index_of_match += 1_usize; next_pass = false; }
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 2_usize; }
                                             else { index_of_match += 1_usize; }
@@ -825,7 +824,7 @@ macro_rules! generate_search {
 
                                 for i in 0..2 {
                                     if next_pass { index_of_match += 1_usize; next_pass = false; }
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 2_usize; }
                                             else { index_of_match += 1_usize; }
@@ -849,7 +848,7 @@ macro_rules! generate_search {
                                 $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
                                 if next_pass { index_of_match += 1_usize; next_pass = false; }
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 2_usize; }
                                         else { index_of_match += 1_usize; }
@@ -878,7 +877,7 @@ macro_rules! generate_search {
                             $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
                             if next_pass { index_of_match += 1_usize; }
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 2_usize; }
                                     else { index_of_match += 1_usize; }
@@ -906,13 +905,13 @@ macro_rules! generate_search {
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
                                     if next_index_of_match != 0_usize { index_of_match += next_index_of_match; next_index_of_match = 0_usize; }
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
                                                 let mut result: bool = true;
 
                                                 for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) != 0 {
@@ -921,7 +920,7 @@ macro_rules! generate_search {
                                                 }
 
                                                 if result {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) == 0 {
@@ -949,10 +948,10 @@ macro_rules! generate_search {
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
                                     if next_index_of_match != 0_usize { index_of_match += next_index_of_match; next_index_of_match = 0_usize; }
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)),
                                                     pattern_loaded
                                                 ))) == 0 {
@@ -983,10 +982,10 @@ macro_rules! generate_search {
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
                                     if next_index_of_match != 0_usize { index_of_match += next_index_of_match; next_index_of_match = 0_usize; }
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)), pattern_loaded),
                                                 ), pattern_ignore_mask)) == 0 {
                                                     let index: usize = array_index + index_of_match;
@@ -1018,13 +1017,13 @@ macro_rules! generate_search {
 
                             if pattern_length > COUNT_OF_VALUES_IN_REGISTER {
                                 if next_index_of_match != 0_usize { index_of_match += next_index_of_match; }
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
                                             let mut result: bool = true;
 
                                             for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) != 0 {
@@ -1033,7 +1032,7 @@ macro_rules! generate_search {
                                             }
 
                                             if result {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) == 0 {
@@ -1048,10 +1047,10 @@ macro_rules! generate_search {
                                 let pattern_loaded: $precision = $load(pattern.as_ptr());
 
                                 if next_index_of_match != 0_usize { index_of_match += next_index_of_match; }
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)),
                                                 pattern_loaded
                                             ))) == 0 {
@@ -1069,10 +1068,10 @@ macro_rules! generate_search {
                                 };
 
                                 if next_index_of_match != 0_usize { index_of_match += next_index_of_match; }
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)), pattern_loaded),
                                             ), pattern_ignore_mask)) == 0 {
                                                 search_result.push((array_index + index_of_match) * $t_size); index_of_match += pattern_length;
@@ -1110,7 +1109,7 @@ macro_rules! generate_search {
 
                 let (mut array_ptr, mut array_index, mut remains_length, mut index_of_match): (*const $t, usize, usize, usize) = (array.as_ptr(), 0_usize, array_length, 0_usize);
 
-                let (mut matches, zero): ([[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t) = ([[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize], $t_default);
+                let mut matches: [[$t; COUNT_OF_VALUES_IN_REGISTER]; 4_usize] = [[$t_default; COUNT_OF_VALUES_IN_REGISTER]; 4_usize];
 
                 unsafe {
                     if pattern_length == 1_usize {
@@ -1134,7 +1133,7 @@ macro_rules! generate_search {
                                 $store(matches[3].as_mut_ptr(), $eq_compare(four, pattern_mask));
 
                                 for i in 0..4 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1161,7 +1160,7 @@ macro_rules! generate_search {
                                 $store(matches[2].as_mut_ptr(), $eq_compare(third, pattern_mask));
 
                                 for i in 0..3 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1186,7 +1185,7 @@ macro_rules! generate_search {
                                 $store(matches[1].as_mut_ptr(), $eq_compare(second, pattern_mask));
 
                                 for i in 0..2 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1204,7 +1203,7 @@ macro_rules! generate_search {
 
                                 $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                         else { index_of_match += 1_usize; }
@@ -1228,7 +1227,7 @@ macro_rules! generate_search {
 
                             $store(matches[0].as_mut_ptr(), $eq_compare(first, pattern_mask));
 
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < remains_length {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                     else { index_of_match += 1_usize; }
@@ -1267,7 +1266,7 @@ macro_rules! generate_search {
                                 $store(matches[3].as_mut_ptr(), $bitwise_and($eq_compare(s_four, start_pattern_mask), $eq_compare(e_four, end_pattern_mask)));
 
                                 for i in 0..4 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1302,7 +1301,7 @@ macro_rules! generate_search {
                                 $store(matches[2].as_mut_ptr(), $bitwise_and($eq_compare(s_third, start_pattern_mask), $eq_compare(e_third, end_pattern_mask)));
 
                                 for i in 0..3 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1332,7 +1331,7 @@ macro_rules! generate_search {
                                 $store(matches[1].as_mut_ptr(), $bitwise_and($eq_compare(s_second, start_pattern_mask), $eq_compare(e_second, end_pattern_mask)));
 
                                 for i in 0..2 {
-                                    if $vector_max($load(matches[i].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[i].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[i][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                             else { index_of_match += 1_usize; }
@@ -1356,7 +1355,7 @@ macro_rules! generate_search {
 
                                 $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                         else { index_of_match += 1_usize; }
@@ -1385,7 +1384,7 @@ macro_rules! generate_search {
 
                             $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                            if $vector_max($load(matches[0].as_ptr())) != zero {
+                            if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                 while index_of_match < remains_length {
                                     if matches[0][index_of_match] != 0 { search_result.push((array_index + index_of_match) * $t_size); index_of_match += 1_usize; }
                                     else { index_of_match += 1_usize; }
@@ -1410,13 +1409,13 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
                                                 let mut result: bool = true;
 
                                                 for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) != 0 {
@@ -1425,7 +1424,7 @@ macro_rules! generate_search {
                                                 }
 
                                                 if result {
-                                                    if $vector_max($bitwise_not($eq_compare(
+                                                    if $vector_to_scalar($bitwise_not($eq_compare(
                                                         $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                         $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                     ))) == 0 {
@@ -1452,10 +1451,10 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)),
                                                     pattern_loaded
                                                 ))) == 0 {
@@ -1485,10 +1484,10 @@ macro_rules! generate_search {
 
                                     $store(matches[0].as_mut_ptr(), $bitwise_and($eq_compare(s_first, start_pattern_mask), $eq_compare(e_first, end_pattern_mask)));
 
-                                    if $vector_max($load(matches[0].as_ptr())) != zero {
+                                    if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                         while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                             if matches[0][index_of_match] != 0 {
-                                                if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match)), pattern_loaded),
                                                 ), pattern_ignore_mask)) == 0 {
                                                     search_result.push((array_index + index_of_match) * $t_size);
@@ -1516,13 +1515,13 @@ macro_rules! generate_search {
                             }
 
                             if pattern_length > COUNT_OF_VALUES_IN_REGISTER {
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
                                             let mut result: bool = true;
 
                                             for i in 0_usize..middle_pattern_parts - 1_usize {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + 1_usize + i * COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(1_usize + i * COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) != 0 {
@@ -1531,7 +1530,7 @@ macro_rules! generate_search {
                                             }
 
                                             if result {
-                                                if $vector_max($bitwise_not($eq_compare(
+                                                if $vector_to_scalar($bitwise_not($eq_compare(
                                                     $load(array_ptr.add(index_of_match + last_pattern_index - COUNT_OF_VALUES_IN_REGISTER)),
                                                     $load(pattern.as_ptr().add(last_pattern_index - COUNT_OF_VALUES_IN_REGISTER))
                                                 ))) == 0 {
@@ -1545,10 +1544,10 @@ macro_rules! generate_search {
                             } else if pattern_length == COUNT_OF_VALUES_IN_REGISTER {
                                 let pattern_loaded: $precision = $load(pattern.as_ptr());
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)),
                                                 pattern_loaded
                                             ))) == 0 {
@@ -1565,10 +1564,10 @@ macro_rules! generate_search {
                                     ($load(pattern_array.as_ptr()), $load(ignore_mask.as_ptr()))
                                 };
 
-                                if $vector_max($load(matches[0].as_ptr())) != zero {
+                                if $vector_to_scalar($load(matches[0].as_ptr())) != 0 {
                                     while index_of_match < COUNT_OF_VALUES_IN_REGISTER {
                                         if matches[0][index_of_match] != 0 {
-                                            if $vector_max($bitwise_and($bitwise_not($eq_compare(
+                                            if $vector_to_scalar($bitwise_and($bitwise_not($eq_compare(
                                                 $load(array_ptr.add(index_of_match)), pattern_loaded),
                                             ), pattern_ignore_mask)) == 0 {
                                                 search_result.push((array_index + index_of_match) * $t_size);
@@ -1588,6 +1587,6 @@ macro_rules! generate_search {
     };
 }
 
-generate_search!(u8, 0_u8, 0xFF, size_of::<u8>(), uint8x16_t, size_of::<uint8x16_t>(), vld1q_u8, vst1q_u8, vdupq_n_u8, vceqq_u8, vandq_u8, vmvnq_u8, vmaxvq_u8);
-generate_search!(u16, 0_u16, 0xFFFF, size_of::<u16>(), uint16x8_t, size_of::<uint16x8_t>(), vld1q_u16, vst1q_u16, vdupq_n_u16, vceqq_u16, vandq_u16, vmvnq_u16, vmaxvq_u16);
-generate_search!(u32, 0_u32, 0xFFFFFFFF, size_of::<u32>(), uint32x4_t, size_of::<uint32x4_t>(), vld1q_u32, vst1q_u32, vdupq_n_u32, vceqq_u32, vandq_u32, vmvnq_u32, vmaxvq_u32);
+generate_search!(u8, 0_u8, 0xFF, size_of::<u8>(), uint8x16_t, size_of::<uint8x16_t>(), vld1q_u8, vst1q_u8, vdupq_n_u8, vceqq_u8, vandq_u8, vmvnq_u8, transmute::<uint8x16_t, u128>);
+generate_search!(u16, 0_u16, 0xFFFF, size_of::<u16>(), uint16x8_t, size_of::<uint16x8_t>(), vld1q_u16, vst1q_u16, vdupq_n_u16, vceqq_u16, vandq_u16, vmvnq_u16, transmute::<uint16x8_t, u128>);
+generate_search!(u32, 0_u32, 0xFFFFFFFF, size_of::<u32>(), uint32x4_t, size_of::<uint32x4_t>(), vld1q_u32, vst1q_u32, vdupq_n_u32, vceqq_u32, vandq_u32, vmvnq_u32, transmute::<uint32x4_t, u128>);
